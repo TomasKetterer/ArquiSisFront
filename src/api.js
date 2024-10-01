@@ -13,7 +13,7 @@ const useApi = (endpoint) => {
       try {
         // Especifica el audience al obtener el token
         const token = await getAccessTokenSilently({
-          audience: 'https://api.nodecraft.me', // Reemplaza con tu audience
+          audience: 'https://api.nodecraft.me',
         });
 
         const response = await fetch(endpoint, {
