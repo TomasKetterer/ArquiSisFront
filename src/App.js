@@ -10,6 +10,8 @@ function App() {
   const [currentPage, setCurrentPage] = useState(1);
   const [filters, setFilters] = useState({ home: '', away: '', date: '' });
   const [walletBalance, setWalletBalance] = useState(0);
+  const [bonuses, setBonuses] = useState([]); // Estado para almacenar los bonos del usuario
+  const [showModal, setShowModal] = useState(false); // Estado para controlar el modal
   const [newUser, setNewUser] = useState({ username: '', email: '', password: '', wallet: 0 });
   const fixturesPerPage = 24;
 
@@ -51,7 +53,7 @@ function App() {
   const registerUser = async () => {
     try {
       const response = await axios.post('https://nodecraft.me/users/', {
-        id: user.sub,  // Assuming Auth0 provides a unique id (user.sub)
+        id: user.sub,
         username: newUser.username,
         email: newUser.email,
         password: newUser.password,
@@ -62,6 +64,17 @@ function App() {
     } catch (error) {
       console.error('Error registering user:', error);
       alert('Failed to register user.');
+    }
+  };
+
+  const fetchUserBonuses = async () => {
+    try {
+      const response = await axios.get(`https://nodecraft.me/users/${user.sub}/bonuses`);
+      setBonuses(response.data);
+      setShowModal(true);
+    } catch (error) {
+      console.error('Error fetching user bonuses:', error);
+      alert('Failed to fetch user bonuses.');
     }
   };
 
@@ -129,6 +142,10 @@ function App() {
               <button onClick={addMoneyToWallet}>Add Money to Wallet</button>
             </div>
 
+            <div className="bonuses-section">
+              <button onClick={fetchUserBonuses}>View My Bonuses</button>
+            </div>
+
             <div className="filters">
               <input
                 type="text"
@@ -193,37 +210,31 @@ function App() {
                 </button>
               ))}
             </div>
+            
+            {showModal && (
+              <div className="modal">
+                <div className="modal-content">
+                  <h2>My Bonuses</h2>
+                  {bonuses.length > 0 ? (
+                    bonuses.map((bonus, index) => (
+                      <div key={index} className="bonus-item">
+                        <p>Fixture ID: {bonus.fixture_id}</p>
+                        <p>Team Supported: {bonus.team_name}</p>
+                        <p>Bet Amount: ${bonus.amount}</p>
+                        <p>Status: {bonus.status}</p>
+                      </div>
+                    ))
+                  ) : (
+                    <p>No bonuses found.</p>
+                  )}
+                  <button onClick={() => setShowModal(false)}>Close</button>
+                </div>
+              </div>
+            )}
           </>
         ) : (
           <div className="register-container">
             <h1>Register</h1>
-            <input
-              type="text"
-              placeholder="Username"
-              value={newUser.username}
-              onChange={(e) => setNewUser({ ...newUser, username: e.target.value })}
-            />
-            <input
-              type="email"
-              placeholder="Email"
-              value={newUser.email}
-              onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
-            />
-            <input
-              type="password"
-              placeholder="Password"
-              value={newUser.password}
-              onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
-            />
-            <input
-              type="number"
-              placeholder="Initial Wallet Amount"
-              value={newUser.wallet}
-              onChange={(e) => setNewUser({ ...newUser, wallet: parseFloat(e.target.value) })}
-            />
-            <button onClick={registerUser}>Register</button>
-            <p>Already have an account?</p>
-            <button className="login-button" onClick={() => loginWithRedirect()}>Iniciar Sesión</button>
           </div>
         )}
       </header>
