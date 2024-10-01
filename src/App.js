@@ -6,9 +6,7 @@ import { useAuth0 } from '@auth0/auth0-react';
 function App() {
   const { loginWithRedirect, logout, isAuthenticated, user } = useAuth0();
   const [fixtures, setFixtures] = useState([]);
-  const [filteredFixtures, setFilteredFixtures] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const [filters, setFilters] = useState({ home: '', away: '', date: '' });
   const fixturesPerPage = 24; 
 
   useEffect(() => {
@@ -16,7 +14,6 @@ function App() {
       try {
         const response = await axios.get('https://nodecraft.me/fixtures');
         setFixtures(response.data.data);
-        setFilteredFixtures(response.data.data);
       } catch (error) {
         console.error('Error fetching fixtures:', error);
       }
@@ -24,38 +21,9 @@ function App() {
     fetchFixtures();
   }, []);
 
-  useEffect(() => {
-    const applyFilters = () => {
-      let filtered = fixtures;
-
-      if (filters.home) {
-        filtered = filtered.filter(fixture =>
-          fixture.teams.home.name.toLowerCase().includes(filters.home.toLowerCase())
-        );
-      }
-
-      if (filters.away) {
-        filtered = filtered.filter(fixture =>
-          fixture.teams.away.name.toLowerCase().includes(filters.away.toLowerCase())
-        );
-      }
-
-      if (filters.date) {
-        filtered = filtered.filter(fixture => 
-          fixture.fixture.date.includes(filters.date)
-        );
-      }
-
-      setFilteredFixtures(filtered);
-      setCurrentPage(1);
-    };
-
-    applyFilters();
-  }, [filters, fixtures]);
-
   const indexOfLastFixture = currentPage * fixturesPerPage;
   const indexOfFirstFixture = indexOfLastFixture - fixturesPerPage;
-  const currentFixtures = filteredFixtures.slice(indexOfFirstFixture, indexOfLastFixture);
+  const currentFixtures = fixtures.slice(indexOfFirstFixture, indexOfLastFixture);
 
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
@@ -69,44 +37,40 @@ function App() {
             <button onClick={() => logout({ returnTo: window.location.origin })}>
               Cerrar Sesión
             </button>
-            
-            <div className="filters">
-              <input
-                type="text"
-                placeholder="Filter by home team"
-                value={filters.home}
-                onChange={(e) => setFilters({ ...filters, home: e.target.value })}
-              />
-              <input
-                type="text"
-                placeholder="Filter by away team"
-                value={filters.away}
-                onChange={(e) => setFilters({ ...filters, away: e.target.value })}
-              />
-              <input
-                type="date"
-                value={filters.date}
-                onChange={(e) => setFilters({ ...filters, date: e.target.value })}
-              />
+            <div className="pagination">
+              {Array.from({ length: Math.ceil(fixtures.length / fixturesPerPage) }, (_, index) => (
+                <button
+                  key={index + 1}
+                  onClick={() => paginate(index + 1)}
+                  className={currentPage === index + 1 ? 'active' : ''}
+                >
+                  {index + 1}
+                </button>
+              ))}
             </div>
-
+            
             <div className="fixtures-grid">
               {currentFixtures.length > 0 ? (
                 currentFixtures.map(fixture => (
-                  <div key={fixture.fixture.id} className="fixture-item">
-                    <div className="team-info">
-                      <img src={fixture.teams.home.logo} alt={fixture.teams.home.name} />
-                      <span>{fixture.teams.home.name}</span>
+                  <div key={fixture.fixture_id} className="fixture-item">
+                    <div className="league-info">
+                      <p>{fixture.league_name}</p>
                     </div>
                     <div className="team-info">
-                      <img src={fixture.teams.away.logo} alt={fixture.teams.away.name} />
-                      <span>{fixture.teams.away.name}</span>
+                      <img src={fixture.home_team_logo} alt={fixture.home_team_name} />
+                      <span>{fixture.home_team_name}</span>
+                      <span> vs</span>
+                      <img src={fixture.away_team_logo} alt={fixture.away_team_name} />
+                      <span>{fixture.away_team_name}</span>
                     </div>
                     <div className="fixture-date">
-                      <p>{new Date(fixture.fixture.date).toLocaleDateString()}</p>
+                      <p>{new Date(fixture.date).toLocaleDateString()} - {new Date(fixture.date).toLocaleTimeString()}</p>
+                    </div>
+                    <div className="fixture-goals">
+                      <p>Score: {fixture.goals_home} - {fixture.goals_away}</p>
                     </div>
                     <div className="fixture-odds">
-                      {fixture.odds.map((odd, index) => (
+                      {fixture.odds && fixture.odds.map((odd, index) => (
                         <p key={index}>{odd.name}: {odd.values.join(', ')}</p>
                       ))}
                     </div>
@@ -118,7 +82,7 @@ function App() {
             </div>
 
             <div className="pagination">
-              {Array.from({ length: Math.ceil(filteredFixtures.length / fixturesPerPage) }, (_, index) => (
+              {Array.from({ length: Math.ceil(fixtures.length / fixturesPerPage) }, (_, index) => (
                 <button
                   key={index + 1}
                   onClick={() => paginate(index + 1)}
