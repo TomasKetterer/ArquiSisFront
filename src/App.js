@@ -4,24 +4,71 @@ import axios from 'axios';
 import { useAuth0 } from '@auth0/auth0-react';
 
 function App() {
-  const { loginWithRedirect, logout, isAuthenticated, user } = useAuth0();
+  const { loginWithRedirect, logout, isAuthenticated, user, getAccessTokenSilently } = useAuth0();
   const [fixtures, setFixtures] = useState([]);
   const [filteredFixtures, setFilteredFixtures] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [filters, setFilters] = useState({ home: '', away: '', date: '' });
   const [walletBalance, setWalletBalance] = useState(0);
-  const [bonuses, setBonuses] = useState([]); // Estado para almacenar los bonos del usuario
-  const [showModal, setShowModal] = useState(false); // Estado para controlar el modal
-  const [newUser, setNewUser] = useState({ username: '', email: '', password: '', wallet: 0 });
+  const [bonuses, setBonuses] = useState([]);
+  const [showModal, setShowModal] = useState(false);
   const fixturesPerPage = 24;
+
+  const removeDuplicateFixtures = (fixtures) => {
+    const uniqueFixtures = [];
+    const fixtureIds = new Set();
+
+    for (const fixture of fixtures) {
+      if (!fixtureIds.has(fixture.fixture_id)) {
+        fixtureIds.add(fixture.fixture_id);
+        uniqueFixtures.push(fixture);
+      }
+    }
+
+    return uniqueFixtures;
+  };
+
+  const fetchUserWallet = async () => {
+    try {
+      const token = await getAccessTokenSilently();
+      const response = await axios.get(`https://nodecraft.me/users/${user.sub}/wallet`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setWalletBalance(response.data.wallet);
+    } catch (error) {
+      console.error('Error fetching wallet balance:', error);
+    }
+  };
+
+  const fetchFixtures = async () => {
+    try {
+      const response = await axios.get('https://nodecraft.me/fixtures');
+      const uniqueFixtures = removeDuplicateFixtures(response.data.data);
+      setFixtures(uniqueFixtures);
+      setFilteredFixtures(uniqueFixtures);
+    } catch (error) {
+      console.error('Error fetching fixtures:', error);
+    }
+  };
 
   const addMoneyToWallet = async () => {
     const amount = prompt('Enter the amount to add to your wallet:');
     const parsedAmount = parseFloat(amount);
-    
+
     if (!isNaN(parsedAmount) && parsedAmount > 0) {
       try {
-        const response = await axios.patch(`https://nodecraft.me/users/${user.sub}/wallet`, { amount: parsedAmount });
+        const token = await getAccessTokenSilently();
+        const response = await axios.patch(
+          `https://nodecraft.me/users/${user.sub}/wallet`,
+          { amount: parsedAmount },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
         setWalletBalance(response.data.wallet);
         alert(`Added $${parsedAmount} to your wallet.`);
       } catch (error) {
@@ -38,7 +85,16 @@ function App() {
 
     if (walletBalance >= cost) {
       try {
-        const response = await axios.patch(`https://nodecraft.me/users/${user.sub}/wallet`, { amount: -cost });
+        const token = await getAccessTokenSilently();
+        const response = await axios.patch(
+          `https://nodecraft.me/users/${user.sub}/wallet`,
+          { amount: -cost },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
         setWalletBalance(response.data.wallet);
         alert(`Bought a bonus for fixture ${fixtureId}`);
       } catch (error) {
@@ -50,26 +106,14 @@ function App() {
     }
   };
 
-  const registerUser = async () => {
-    try {
-      const response = await axios.post('https://nodecraft.me/users/', {
-        id: user.sub,
-        username: newUser.username,
-        email: newUser.email,
-        password: newUser.password,
-        wallet: newUser.wallet,
-      });
-      
-      alert('User registered successfully!');
-    } catch (error) {
-      console.error('Error registering user:', error);
-      alert('Failed to register user.');
-    }
-  };
-
   const fetchUserBonuses = async () => {
     try {
-      const response = await axios.get(`https://nodecraft.me/users/${user.sub}/bonuses`);
+      const token = await getAccessTokenSilently();
+      const response = await axios.get(`https://nodecraft.me/users/${user.sub}/bonuses`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
       setBonuses(response.data);
       setShowModal(true);
     } catch (error) {
@@ -79,38 +123,30 @@ function App() {
   };
 
   useEffect(() => {
-    const fetchFixtures = async () => {
-      try {
-        const response = await axios.get('https://nodecraft.me/fixtures');
-        setFixtures(response.data.data);
-        setFilteredFixtures(response.data.data);
-      } catch (error) {
-        console.error('Error fetching fixtures:', error);
-      }
-    };
-    fetchFixtures();
-  }, []);
+    if (isAuthenticated) {
+      fetchFixtures();
+      fetchUserWallet();
+    }
+  }, [isAuthenticated]);
 
   useEffect(() => {
     const applyFilters = () => {
       let filtered = fixtures;
 
       if (filters.home) {
-        filtered = filtered.filter(fixture =>
+        filtered = filtered.filter((fixture) =>
           fixture.home_team_name.toLowerCase().includes(filters.home.toLowerCase())
         );
       }
 
       if (filters.away) {
-        filtered = filtered.filter(fixture =>
+        filtered = filtered.filter((fixture) =>
           fixture.away_team_name.toLowerCase().includes(filters.away.toLowerCase())
         );
       }
 
       if (filters.date) {
-        filtered = filtered.filter(fixture =>
-          fixture.date.includes(filters.date)
-        );
+        filtered = filtered.filter((fixture) => fixture.date.includes(filters.date));
       }
 
       setFilteredFixtures(filtered);
@@ -132,16 +168,14 @@ function App() {
         {isAuthenticated ? (
           <>
             <img src={user.picture} alt={user.name} className="App-logo" />
-            <p>Bienvenido, {user.name}</p>
+            <p>Welcome, {user.name}</p>
             <button onClick={() => logout({ returnTo: window.location.origin })}>
-              Cerrar Sesión
+              Log Out
             </button>
-            
             <div className="wallet-balance">
               <p>Wallet Balance: ${walletBalance}</p>
               <button onClick={addMoneyToWallet}>Add Money to Wallet</button>
             </div>
-
             <div className="bonuses-section">
               <button onClick={fetchUserBonuses}>View My Bonuses</button>
             </div>
@@ -176,7 +210,7 @@ function App() {
                     <div className="team-info">
                       <img src={fixture.home_team_logo} alt={fixture.home_team_name} />
                       <span>{fixture.home_team_name}</span>
-                      <span> vs</span>
+                      <span> vs </span>
                       <img src={fixture.away_team_logo} alt={fixture.away_team_name} />
                       <span>{fixture.away_team_name}</span>
                     </div>
@@ -210,7 +244,7 @@ function App() {
                 </button>
               ))}
             </div>
-            
+
             {showModal && (
               <div className="modal">
                 <div className="modal-content">
@@ -233,8 +267,10 @@ function App() {
             )}
           </>
         ) : (
-          <div className="register-container">
-            <h1>Register</h1>
+          <div className="welcome-container">
+            <h1>Welcome to NodeCraft</h1>
+            <p>Your ultimate destination for football fixtures and more!</p>
+            <button onClick={() => loginWithRedirect()}>Log In</button>
           </div>
         )}
       </header>
