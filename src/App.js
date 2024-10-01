@@ -10,7 +10,60 @@ function App() {
   const [currentPage, setCurrentPage] = useState(1);
   const [filters, setFilters] = useState({ home: '', away: '', date: '' });
   const [walletBalance, setWalletBalance] = useState(0);
-  const fixturesPerPage = 24; 
+  const [newUser, setNewUser] = useState({ username: '', email: '', password: '', wallet: 0 });
+  const fixturesPerPage = 24;
+
+  const addMoneyToWallet = async () => {
+    const amount = prompt('Enter the amount to add to your wallet:');
+    const parsedAmount = parseFloat(amount);
+    
+    if (!isNaN(parsedAmount) && parsedAmount > 0) {
+      try {
+        const response = await axios.patch(`https://nodecraft.me/users/${user.sub}/wallet`, { amount: parsedAmount });
+        setWalletBalance(response.data.wallet);
+        alert(`Added $${parsedAmount} to your wallet.`);
+      } catch (error) {
+        console.error('Error adding money to wallet:', error);
+        alert('Failed to add money to wallet.');
+      }
+    } else {
+      alert('Invalid amount entered.');
+    }
+  };
+
+  const buyBonus = async (fixtureId) => {
+    const cost = 1000;
+
+    if (walletBalance >= cost) {
+      try {
+        const response = await axios.patch(`https://nodecraft.me/users/${user.sub}/wallet`, { amount: -cost });
+        setWalletBalance(response.data.wallet);
+        alert(`Bought a bonus for fixture ${fixtureId}`);
+      } catch (error) {
+        console.error('Error buying bonus:', error);
+        alert('Failed to buy bonus.');
+      }
+    } else {
+      alert('Insufficient funds in wallet.');
+    }
+  };
+
+  const registerUser = async () => {
+    try {
+      const response = await axios.post('https://nodecraft.me/users/', {
+        id: user.sub,  // Assuming Auth0 provides a unique id (user.sub)
+        username: newUser.username,
+        email: newUser.email,
+        password: newUser.password,
+        wallet: newUser.wallet,
+      });
+      
+      alert('User registered successfully!');
+    } catch (error) {
+      console.error('Error registering user:', error);
+      alert('Failed to register user.');
+    }
+  };
 
   useEffect(() => {
     const fetchFixtures = async () => {
@@ -59,21 +112,6 @@ function App() {
   const currentFixtures = filteredFixtures.slice(indexOfFirstFixture, indexOfLastFixture);
 
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
-
-  const buyBonus = (fixtureId) => {
-    alert(`Bought a bonus for fixture ${fixtureId}`);
-  };
-
-  const addMoneyToWallet = () => {
-    const amount = prompt('Enter the amount to add to your wallet:');
-    const parsedAmount = parseFloat(amount);
-    if (!isNaN(parsedAmount) && parsedAmount > 0) {
-      setWalletBalance(walletBalance + parsedAmount);
-      alert(`Added $${parsedAmount} to your wallet.`);
-    } else {
-      alert('Invalid amount entered.');
-    }
-  };
 
   return (
     <div className="App">
@@ -157,9 +195,34 @@ function App() {
             </div>
           </>
         ) : (
-          <div className="welcome-container">
-            <h1>Welcome to NodeCraft</h1>
-            <p>Your ultimate destination for football fixtures and more!</p>
+          <div className="register-container">
+            <h1>Register</h1>
+            <input
+              type="text"
+              placeholder="Username"
+              value={newUser.username}
+              onChange={(e) => setNewUser({ ...newUser, username: e.target.value })}
+            />
+            <input
+              type="email"
+              placeholder="Email"
+              value={newUser.email}
+              onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
+            />
+            <input
+              type="password"
+              placeholder="Password"
+              value={newUser.password}
+              onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+            />
+            <input
+              type="number"
+              placeholder="Initial Wallet Amount"
+              value={newUser.wallet}
+              onChange={(e) => setNewUser({ ...newUser, wallet: parseFloat(e.target.value) })}
+            />
+            <button onClick={registerUser}>Register</button>
+            <p>Already have an account?</p>
             <button className="login-button" onClick={() => loginWithRedirect()}>Iniciar Sesión</button>
           </div>
         )}
