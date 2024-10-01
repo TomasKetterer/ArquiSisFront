@@ -6,7 +6,10 @@ import { useAuth0 } from '@auth0/auth0-react';
 function App() {
   const { loginWithRedirect, logout, isAuthenticated, user } = useAuth0();
   const [fixtures, setFixtures] = useState([]);
+  const [filteredFixtures, setFilteredFixtures] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
+  const [filters, setFilters] = useState({ home: '', away: '', date: '' });
+  const [walletBalance, setWalletBalance] = useState(0);
   const fixturesPerPage = 24; 
 
   useEffect(() => {
@@ -14,6 +17,7 @@ function App() {
       try {
         const response = await axios.get('https://nodecraft.me/fixtures');
         setFixtures(response.data.data);
+        setFilteredFixtures(response.data.data);
       } catch (error) {
         console.error('Error fetching fixtures:', error);
       }
@@ -21,11 +25,55 @@ function App() {
     fetchFixtures();
   }, []);
 
+  useEffect(() => {
+    const applyFilters = () => {
+      let filtered = fixtures;
+
+      if (filters.home) {
+        filtered = filtered.filter(fixture =>
+          fixture.home_team_name.toLowerCase().includes(filters.home.toLowerCase())
+        );
+      }
+
+      if (filters.away) {
+        filtered = filtered.filter(fixture =>
+          fixture.away_team_name.toLowerCase().includes(filters.away.toLowerCase())
+        );
+      }
+
+      if (filters.date) {
+        filtered = filtered.filter(fixture =>
+          fixture.date.includes(filters.date)
+        );
+      }
+
+      setFilteredFixtures(filtered);
+      setCurrentPage(1);
+    };
+
+    applyFilters();
+  }, [filters, fixtures]);
+
   const indexOfLastFixture = currentPage * fixturesPerPage;
   const indexOfFirstFixture = indexOfLastFixture - fixturesPerPage;
-  const currentFixtures = fixtures.slice(indexOfFirstFixture, indexOfLastFixture);
+  const currentFixtures = filteredFixtures.slice(indexOfFirstFixture, indexOfLastFixture);
 
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
+
+  const buyBonus = (fixtureId) => {
+    alert(`Bought a bonus for fixture ${fixtureId}`);
+  };
+
+  const addMoneyToWallet = () => {
+    const amount = prompt('Enter the amount to add to your wallet:');
+    const parsedAmount = parseFloat(amount);
+    if (!isNaN(parsedAmount) && parsedAmount > 0) {
+      setWalletBalance(walletBalance + parsedAmount);
+      alert(`Added $${parsedAmount} to your wallet.`);
+    } else {
+      alert('Invalid amount entered.');
+    }
+  };
 
   return (
     <div className="App">
@@ -37,18 +85,32 @@ function App() {
             <button onClick={() => logout({ returnTo: window.location.origin })}>
               Cerrar Sesión
             </button>
-            <div className="pagination">
-              {Array.from({ length: Math.ceil(fixtures.length / fixturesPerPage) }, (_, index) => (
-                <button
-                  key={index + 1}
-                  onClick={() => paginate(index + 1)}
-                  className={currentPage === index + 1 ? 'active' : ''}
-                >
-                  {index + 1}
-                </button>
-              ))}
-            </div>
             
+            <div className="wallet-balance">
+              <p>Wallet Balance: ${walletBalance}</p>
+              <button onClick={addMoneyToWallet}>Add Money to Wallet</button>
+            </div>
+
+            <div className="filters">
+              <input
+                type="text"
+                placeholder="Filter by home team"
+                value={filters.home}
+                onChange={(e) => setFilters({ ...filters, home: e.target.value })}
+              />
+              <input
+                type="text"
+                placeholder="Filter by away team"
+                value={filters.away}
+                onChange={(e) => setFilters({ ...filters, away: e.target.value })}
+              />
+              <input
+                type="date"
+                value={filters.date}
+                onChange={(e) => setFilters({ ...filters, date: e.target.value })}
+              />
+            </div>
+
             <div className="fixtures-grid">
               {currentFixtures.length > 0 ? (
                 currentFixtures.map(fixture => (
@@ -74,6 +136,7 @@ function App() {
                         <p key={index}>{odd.name}: {odd.values.join(', ')}</p>
                       ))}
                     </div>
+                    <button onClick={() => buyBonus(fixture.fixture_id)}>Buy Bonus</button>
                   </div>
                 ))
               ) : (
@@ -82,7 +145,7 @@ function App() {
             </div>
 
             <div className="pagination">
-              {Array.from({ length: Math.ceil(fixtures.length / fixturesPerPage) }, (_, index) => (
+              {Array.from({ length: Math.ceil(filteredFixtures.length / fixturesPerPage) }, (_, index) => (
                 <button
                   key={index + 1}
                   onClick={() => paginate(index + 1)}
@@ -94,10 +157,11 @@ function App() {
             </div>
           </>
         ) : (
-          <>
-            <p>Node Craft</p>
-            <button onClick={() => loginWithRedirect()}>Iniciar Sesión</button>
-          </>
+          <div className="welcome-container">
+            <h1>Welcome to NodeCraft</h1>
+            <p>Your ultimate destination for football fixtures and more!</p>
+            <button className="login-button" onClick={() => loginWithRedirect()}>Iniciar Sesión</button>
+          </div>
         )}
       </header>
     </div>
