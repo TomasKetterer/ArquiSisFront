@@ -12,6 +12,7 @@ root.render(
       domain={process.env.REACT_APP_DOMAIN}
       clientId={process.env.REACT_APP_CLIENT_ID}
       redirectUri={window.location.origin}
+      audience="https://api.nodecraft.me"
     >
       <App />
     </Auth0Provider>

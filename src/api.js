@@ -1,3 +1,4 @@
+// src/api.js
 import { useAuth0 } from '@auth0/auth0-react';
 import { useEffect, useState } from 'react';
 
@@ -10,7 +11,11 @@ const useApi = (endpoint) => {
   useEffect(() => {
     const callApi = async () => {
       try {
-        const token = await getAccessTokenSilently();
+        // Especifica el audience al obtener el token
+        const token = await getAccessTokenSilently({
+          audience: 'https://api.nodecraft.me', // Reemplaza con tu audience
+        });
+
         const response = await fetch(endpoint, {
           headers: {
             Authorization: `Bearer ${token}`,
