@@ -11,7 +11,6 @@ const useApi = (endpoint) => {
   useEffect(() => {
     const callApi = async () => {
       try {
-        // Especifica el audience al obtener el token
         const token = await getAccessTokenSilently({
           audience: 'https://api.nodecraft.me',
         });

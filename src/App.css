@@ -77,6 +77,12 @@
   background-color: #f0f0f0;
 }
 
+.team-info span {
+  font-size: 16px;
+  font-weight: bold;
+  color: #333;
+}
+
 .fixture-date, .fixture-goals {
   font-size: 14px;
   margin: 5px 0;
@@ -93,6 +99,12 @@
   font-weight: bold;
   margin-bottom: 5px;
   color: #555;
+}
+
+.text-colored {
+  font-size: 20px;
+  font-weight: bold;
+  color: #333;
 }
 
 .pagination {
