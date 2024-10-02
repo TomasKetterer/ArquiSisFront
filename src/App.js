@@ -213,6 +213,15 @@ function App() {
       result = '---';
     }
 
+    //Esto es para la logica del backend
+    if (result === 'home') {
+      result = 'Home';
+    }
+
+    if (result === 'away') {
+      result = 'Away';
+    }
+
     if (walletBalance >= cost && selectedFixture.bonos > 0) {
       try {
         const request = await axios.post('https://api.nodecraft.me/mqtt/publish-request',
@@ -222,7 +231,9 @@ function App() {
             round: selectedFixture.round,
             date: selectedFixture.date,
             result: result,
-            quantity: quantity
+            quantity: quantity,
+            odds: selectedFixture.odds,
+            user_id: encodedUserId
           }
         );
 
