@@ -33,17 +33,18 @@ function App() {
     return uniqueFixtures;
   };
 
-  const fetchUserWallet = async () => {
+  const fetchUser = async () => {
     try {
-      const userId = localStorage.getItem('userId');
+      const encodedUserId = localStorage.getItem('userId');
 
       const token = await getAccessTokenSilently();
-      const response = await axios.get(`https://api.nodecraft.me/users/${user.sub}/wallet`, {
+      const response = await axios.get(`https://api.nodecraft.me/users/${encodedUserId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
       setWalletBalance(response.data.wallet);
+      setBonuses(response.data.bonos);
     } catch (error) {
       console.error('Error fetching wallet balance:', error);
     }
@@ -63,9 +64,10 @@ function App() {
   const createUser = async () => {
     try {
       const token = await getAccessTokenSilently();
+      const encodedUserId = encodeURIComponent(user.sub).substring(16);
       await axios.post('https://api.nodecraft.me/users', 
         { 
-          id: user.sub,
+          id: encodedUserId,
           username: user.nickname, 
           email: user.email, 
           password: "NoHayPassword", 
@@ -77,7 +79,7 @@ function App() {
           Authorization: `Bearer ${token}`,
         },
       });
-      localStorage.setItem('userId', user.sub);
+      localStorage.setItem('userId', encodedUserId);
     } catch (error) {
       console.error('Error creating user:', error);
     }
@@ -85,7 +87,7 @@ function App() {
 
   const addMoneyToWallet = async () => {
     const amount = prompt('Enter the amount to add to your wallet:');
-    const parsedAmount = parseInt(amount, 10); // Convertir a un entero base 10
+    const parsedAmount = parseInt(amount, 10);
 
     if (!isNaN(parsedAmount) && parsedAmount > 0) {
       try {
@@ -124,6 +126,11 @@ function App() {
 
   const buyBonus = async (fixture, result, quantity) => {
     const cost = 1000;
+    const encodedUserId = localStorage.getItem('userId');
+    const token = await getAccessTokenSilently();
+    if (result === 'draw'){
+      result = '---';
+    }
   
     if (walletBalance >= cost && fixture.bonos > 0) {
       try {
@@ -135,11 +142,6 @@ function App() {
             date: fixture.date,
             result: result,
             quantity: quantity
-          },
-          {
-            headers: {
-              'Content-Type': 'application/json'
-            },
           }
         );
 
@@ -147,10 +149,11 @@ function App() {
           alert('Invalid request');
           return;
         }
+
+        alert('Request sent');
   
-        const token = await getAccessTokenSilently();
         const response = await axios.patch(
-          `https://api.nodecraft.me/users/${user.sub}/wallet`,
+          `https://api.nodecraft.me/users/${encodedUserId}/wallet`,
           { amount: -cost },
           {
             headers: {
@@ -158,8 +161,9 @@ function App() {
             },
           }
         );
-  
-        setWalletBalance(response.data.wallet);
+
+        fetchUser();
+
         alert(`Bought a bonus for fixture ${fixture.fixture_id}`);
         const fixtureResponse = await axios.patch(
           `https://api.nodecraft.me/fixtures/${fixture.fixture_id}/bonos`,
@@ -171,7 +175,7 @@ function App() {
           }
         );  
         const addBonusToUser = await axios.patch(
-          `https://api.nodecraft.me/users/${user.sub}/bonos`,
+          `https://api.nodecraft.me/users/${encodedUserId}/bonos`,
           { bonos: {
             fixture_id: fixture.fixture_id,
             league_name: fixture.league_name,
@@ -195,29 +199,16 @@ function App() {
       alert('Insufficient funds in wallet.');
     }
   };
-  
 
-  const fetchUserBonuses = async () => {
-    try {
-      const token = await getAccessTokenSilently();
-      const response = await axios.get(`https://api.nodecraft.me/users/${user.sub}/bonos`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      setBonuses(response.data);
-      setShowModal(true);
-    } catch (error) {
-      console.error('Error fetching user bonuses:', error);
-      alert('Failed to fetch user bonuses.');
-    }
+  const viewMyBonuses = () => {
+    setShowModal(true);
   };
 
   useEffect(() => {
     if (isAuthenticated) {
       createUser();
       fetchFixtures();
-      fetchUserWallet();
+      fetchUser();
     }
   }, [isAuthenticated]);
 
@@ -269,7 +260,7 @@ function App() {
               <button onClick={addMoneyToWallet}>Add Money to Wallet</button>
             </div>
             <div className="bonuses-section">
-              <button onClick={fetchUserBonuses}>View My Bonuses</button>
+              <button onClick={viewMyBonuses}>View My Bonuses</button>
             </div>
 
             <div className="filters">
@@ -324,6 +315,7 @@ function App() {
                           {odd.values.map((valueObj, valueIndex) => (
                             <p key={valueIndex}>{valueObj.value}: {valueObj.odd}</p>
                           ))}
+                          <div className='text-colored'>Bonos: {fixture.bonos}</div>
                         </div>
                           </>
                       ))}
@@ -369,7 +361,7 @@ function App() {
                       <option className='text-colored' value="draw">Draw</option>
                     </select>
                   </label>
-                  <button onClick={buyBonus}>Confirm Purchase</button>
+                  <button onClick={buyBonus(selectedFixture, result, quantity)}>Confirm Purchase</button>
                   <button onClick={() => setShowBuyModal(false)}>Cancel</button>
                 </div>
               </div>
