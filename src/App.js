@@ -19,6 +19,87 @@ function App() {
   const [showAddMoneyModal, setShowAddMoneyModal] = useState(false);
   const fixturesPerPage = 24;
 
+  const getFixturesHistory = async () => {
+    try {
+      const token = await getAccessTokenSilently();
+      const response = await axios.get('https://api.nodecraft.me/fixtures/history', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      return response.data.fixtures;
+    } catch (error) {
+      console.error('Error fetching fixtures:', error);
+      return [];
+    }
+  };
+
+  const analyzeBonuses = async () => {
+    const fixturesHistory = await getFixturesHistory();
+
+    try {
+      const token = await getAccessTokenSilently();
+      const usersResponse = await axios.get('https://api.nodecraft.me/users', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const users = usersResponse.data;
+
+      for (const user of users) {
+        const { bonos } = user;
+
+        for (const [fixtureId, bonus] of Object.entries(bonos)) {
+          const matchingFixture = fixturesHistory.find(fixture => fixture.fixture.id === parseInt(fixtureId));
+
+          if (matchingFixture) {
+            const homeGoals = matchingFixture.goals.home;
+            const awayGoals = matchingFixture.goals.away;
+
+            const correctResult = (bonus.result === 'home' && homeGoals > awayGoals) ||
+                                  (bonus.result === 'away' && awayGoals > homeGoals) ||
+                                  (bonus.result === 'draw' && homeGoals === awayGoals);
+
+            if (correctResult) {
+              await rewardUser(user, bonus);
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching users or analyzing bonuses:', error);
+    }
+  };
+
+  const rewardUser = async (user, bonus) => {
+    try {
+      const { odds, quantity } = bonus;
+      const oddMultiplier = odds[bonus.result];
+      const rewardAmount = quantity * 1000 * oddMultiplier;
+
+      const token = await getAccessTokenSilently();
+
+      await axios.patch(`https://api.nodecraft.me/users/${user.id}/wallet`, {
+        amount: rewardAmount,
+      }, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      console.log(`Recompensa de ${rewardAmount} entregada al usuario ${user.id}`);
+    } catch (error) {
+      console.error(`Error rewarding user ${user.id}:`, error);
+    }
+  };
+
+  useEffect(() => {
+    const intervalId = setInterval(analyzeBonuses, 300000);
+    return () => clearInterval(intervalId);
+  }, []);
+
   const removeDuplicateFixtures = (fixtures) => {
     const uniqueFixtures = [];
     const fixtureIds = new Set();
@@ -114,7 +195,6 @@ function App() {
     }
 };
 
-
   const handleBuyBonusClick = (fixture) => {
     if (walletBalance >= 1000) {
       setSelectedFixture(fixture);
@@ -124,34 +204,32 @@ function App() {
     }
   };
 
-  const buyBonus = async (fixture, result, quantity) => {
+  const buyBonus = async () => {
     const cost = 1000;
     const encodedUserId = localStorage.getItem('userId');
     const token = await getAccessTokenSilently();
-    if (result === 'draw'){
+    if (result === 'draw') {
       result = '---';
     }
-  
-    if (walletBalance >= cost && fixture.bonos > 0) {
+
+    if (walletBalance >= cost && selectedFixture.nuevosBonos > 0) {
       try {
         const request = await axios.post('https://api.nodecraft.me/mqtt/publish-request',
           { 
-            fixture_id: fixture.fixture_id,
-            league_name: fixture.league_name,
-            round: fixture.round,
-            date: fixture.date,
+            fixture_id: selectedFixture.fixture_id,
+            league_name: selectedFixture.league_name,
+            round: selectedFixture.round,
+            date: selectedFixture.date,
             result: result,
             quantity: quantity
           }
         );
 
-        if (!request.data.valid){
+        if (!request.data.valid) {
           alert('Invalid request');
           return;
         }
 
-        alert('Request sent');
-  
         const response = await axios.patch(
           `https://api.nodecraft.me/users/${encodedUserId}/wallet`,
           { amount: -cost },
@@ -164,27 +242,30 @@ function App() {
 
         fetchUser();
 
-        alert(`Bought a bonus for fixture ${fixture.fixture_id}`);
+        alert(`Bought a bonus for fixture ${selectedFixture.fixture_id}`);
+        const valueBonus = selectedFixture.bonos - 1;
         const fixtureResponse = await axios.patch(
-          `https://api.nodecraft.me/fixtures/${fixture.fixture_id}/bonos`,
-          { bonos: fixture.bonos - 1 },
+          `https://api.nodecraft.me/fixtures/${selectedFixture.fixture_id}/bonos`,
+          { nuevosBonos: valueBonus },
           {
             headers: {
               Authorization: `Bearer ${token}`,
             },
           }
-        );  
+        );
         const addBonusToUser = await axios.patch(
           `https://api.nodecraft.me/users/${encodedUserId}/bonos`,
-          { bonos: {
-            fixture_id: fixture.fixture_id,
-            league_name: fixture.league_name,
-            round: fixture.round,
-            date: fixture.date,
-            result: result,
-            quantity: quantity
-          }
-         },
+          {
+            bonos: {
+              fixture_id: selectedFixture.fixture_id,
+              league_name: selectedFixture.league_name,
+              round: selectedFixture.round,
+              date: selectedFixture.date,
+              result: result,
+              quantity: quantity,
+              odd: selectedFixture.odds
+            }
+          },
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -192,7 +273,6 @@ function App() {
           }
         );
       } catch (error) {
-        console.error('Error buying bonus:', error);
         alert('Failed to buy bonus.');
       }
     } else {
