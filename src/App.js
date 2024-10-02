@@ -12,6 +12,11 @@ function App() {
   const [walletBalance, setWalletBalance] = useState(0);
   const [bonuses, setBonuses] = useState([]);
   const [showModal, setShowModal] = useState(false);
+  const [showBuyModal, setShowBuyModal] = useState(false); 
+  const [selectedFixture, setSelectedFixture] = useState(null);
+  const [result, setResult] = useState('home');
+  const [quantity, setQuantity] = useState(1);
+  const [showAddMoneyModal, setShowAddMoneyModal] = useState(false);
   const fixturesPerPage = 24;
 
   const removeDuplicateFixtures = (fixtures) => {
@@ -30,8 +35,10 @@ function App() {
 
   const fetchUserWallet = async () => {
     try {
+      const userId = localStorage.getItem('userId');
+
       const token = await getAccessTokenSilently();
-      const response = await axios.get(`https://nodecraft.me/users/${user.sub}/wallet`, {
+      const response = await axios.get(`https://api.nodecraft.me/users/${user.sub}/wallet`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -44,7 +51,7 @@ function App() {
 
   const fetchFixtures = async () => {
     try {
-      const response = await axios.get('https://nodecraft.me/fixtures');
+      const response = await axios.get('https://api.nodecraft.me/fixtures');
       const uniqueFixtures = removeDuplicateFixtures(response.data.data);
       setFixtures(uniqueFixtures);
       setFilteredFixtures(uniqueFixtures);
@@ -53,15 +60,40 @@ function App() {
     }
   };
 
+  const createUser = async () => {
+    try {
+      const token = await getAccessTokenSilently();
+      await axios.post('https://api.nodecraft.me/users', 
+        { 
+          id: user.sub,
+          username: user.nickname, 
+          email: user.email, 
+          password: "NoHayPassword", 
+          wallet: 0.0, 
+          bonos: {} 
+        }, 
+        {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      localStorage.setItem('userId', user.sub);
+    } catch (error) {
+      console.error('Error creating user:', error);
+    }
+  };
+
   const addMoneyToWallet = async () => {
     const amount = prompt('Enter the amount to add to your wallet:');
-    const parsedAmount = parseFloat(amount);
+    const parsedAmount = parseInt(amount, 10); // Convertir a un entero base 10
 
     if (!isNaN(parsedAmount) && parsedAmount > 0) {
       try {
+        const userId = localStorage.getItem('userId');
+
         const token = await getAccessTokenSilently();
         const response = await axios.patch(
-          `https://nodecraft.me/users/${user.sub}/wallet`,
+          `https://api.nodecraft.me/users/${userId}/wallet`,
           { amount: parsedAmount },
           {
             headers: {
@@ -76,18 +108,49 @@ function App() {
         alert('Failed to add money to wallet.');
       }
     } else {
-      alert('Invalid amount entered.');
+      alert('Invalid amount entered. Please enter a valid integer.');
+    }
+};
+
+
+  const handleBuyBonusClick = (fixture) => {
+    if (walletBalance >= 1000) {
+      setSelectedFixture(fixture);
+      setShowBuyModal(true);
+    } else {
+      setShowAddMoneyModal(true);
     }
   };
 
-  const buyBonus = async (fixtureId) => {
+  const buyBonus = async (fixture, result, quantity) => {
     const cost = 1000;
-
-    if (walletBalance >= cost) {
+  
+    if (walletBalance >= cost && fixture.bonos > 0) {
       try {
+        const request = await axios.post('https://api.nodecraft.me/mqtt/publish-request',
+          { 
+            fixture_id: fixture.fixture_id,
+            league_name: fixture.league_name,
+            round: fixture.round,
+            date: fixture.date,
+            result: result,
+            quantity: quantity
+          },
+          {
+            headers: {
+              'Content-Type': 'application/json'
+            },
+          }
+        );
+
+        if (!request.data.valid){
+          alert('Invalid request');
+          return;
+        }
+  
         const token = await getAccessTokenSilently();
         const response = await axios.patch(
-          `https://nodecraft.me/users/${user.sub}/wallet`,
+          `https://api.nodecraft.me/users/${user.sub}/wallet`,
           { amount: -cost },
           {
             headers: {
@@ -95,8 +158,35 @@ function App() {
             },
           }
         );
+  
         setWalletBalance(response.data.wallet);
-        alert(`Bought a bonus for fixture ${fixtureId}`);
+        alert(`Bought a bonus for fixture ${fixture.fixture_id}`);
+        const fixtureResponse = await axios.patch(
+          `https://api.nodecraft.me/fixtures/${fixture.fixture_id}/bonos`,
+          { bonos: fixture.bonos - 1 },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );  
+        const addBonusToUser = await axios.patch(
+          `https://api.nodecraft.me/users/${user.sub}/bonos`,
+          { bonos: {
+            fixture_id: fixture.fixture_id,
+            league_name: fixture.league_name,
+            round: fixture.round,
+            date: fixture.date,
+            result: result,
+            quantity: quantity
+          }
+         },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
       } catch (error) {
         console.error('Error buying bonus:', error);
         alert('Failed to buy bonus.');
@@ -105,11 +195,12 @@ function App() {
       alert('Insufficient funds in wallet.');
     }
   };
+  
 
   const fetchUserBonuses = async () => {
     try {
       const token = await getAccessTokenSilently();
-      const response = await axios.get(`https://nodecraft.me/users/${user.sub}/bonuses`, {
+      const response = await axios.get(`https://api.nodecraft.me/users/${user.sub}/bonos`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -124,6 +215,7 @@ function App() {
 
   useEffect(() => {
     if (isAuthenticated) {
+      createUser();
       fetchFixtures();
       fetchUserWallet();
     }
@@ -168,7 +260,7 @@ function App() {
         {isAuthenticated ? (
           <>
             <img src={user.picture} alt={user.name} className="App-logo" />
-            <p>Welcome, {user.name}</p>
+            <p>Welcome,</p>
             <button onClick={() => logout({ returnTo: window.location.origin })}>
               Log Out
             </button>
@@ -207,12 +299,16 @@ function App() {
                     <div className="league-info">
                       <p>{fixture.league_name}</p>
                     </div>
-                    <div className="team-info">
-                      <img src={fixture.home_team_logo} alt={fixture.home_team_name} />
-                      <span>{fixture.home_team_name}</span>
-                      <span> vs </span>
-                      <img src={fixture.away_team_logo} alt={fixture.away_team_name} />
-                      <span>{fixture.away_team_name}</span>
+                    <div className="teams-container">
+                      <div className="team-info">
+                        <img src={fixture.home_team_logo} alt={fixture.home_team_name} />
+                        <span>{fixture.home_team_name}</span>
+                      </div>
+                      <span className='text-colored'> vs </span>
+                      <div className="team-info">
+                        <img src={fixture.away_team_logo} alt={fixture.away_team_name} />
+                        <span>{fixture.away_team_name}</span>
+                      </div>
                     </div>
                     <div className="fixture-date">
                       <p>{new Date(fixture.date).toLocaleDateString()} - {new Date(fixture.date).toLocaleTimeString()}</p>
@@ -222,14 +318,21 @@ function App() {
                     </div>
                     <div className="fixture-odds">
                       {fixture.odds && fixture.odds.map((odd, index) => (
-                        <p key={index}>{odd.name}: {odd.values.join(', ')}</p>
+                        <>
+                          <p>{odd.name}: Odd</p>
+                          <div key={index}>
+                          {odd.values.map((valueObj, valueIndex) => (
+                            <p key={valueIndex}>{valueObj.value}: {valueObj.odd}</p>
+                          ))}
+                        </div>
+                          </>
                       ))}
                     </div>
-                    <button onClick={() => buyBonus(fixture.fixture_id)}>Buy Bonus</button>
+                    <button onClick={() => handleBuyBonusClick(fixture)}>Buy Bonus</button>
                   </div>
                 ))
               ) : (
-                <p>No fixtures available</p>
+                <p className='text-colored'>No fixtures available</p>
               )}
             </div>
 
@@ -245,21 +348,59 @@ function App() {
               ))}
             </div>
 
+            {showBuyModal && (
+              <div className="modal">
+                <div className="modal-content">
+                  <h2 className='text-colored'>Buy Bonus</h2>
+                  <label>
+                    Quantity:
+                    <input
+                      type="number"
+                      min="1"
+                      value={quantity}
+                      onChange={(e) => setQuantity(parseInt(e.target.value))}
+                    />
+                  </label>
+                  <label className='text-colored'>
+                    Result:
+                    <select value={result} onChange={(e) => setResult(e.target.value)}>
+                      <option className='text-colored' value="home">Home</option>
+                      <option className='text-colored' value="away">Away</option>
+                      <option className='text-colored' value="draw">Draw</option>
+                    </select>
+                  </label>
+                  <button onClick={buyBonus}>Confirm Purchase</button>
+                  <button onClick={() => setShowBuyModal(false)}>Cancel</button>
+                </div>
+              </div>
+            )}
+
+            {showAddMoneyModal && (
+              <div className="modal">
+                <div className="modal-content">
+                  <h2 className='text-colored'>Insufficient funds</h2>
+                  <p className='text-colored'>Your current balance is not enough to buy the bonus. Please add money to your wallet.</p>
+                  <button onClick={addMoneyToWallet}>Add Money</button>
+                  <button onClick={() => setShowAddMoneyModal(false)}>Close</button>
+                </div>
+              </div>
+            )}
+
             {showModal && (
               <div className="modal">
                 <div className="modal-content">
-                  <h2>My Bonuses</h2>
+                  <h2 className='text-colored'>My Bonuses</h2>
                   {bonuses.length > 0 ? (
                     bonuses.map((bonus, index) => (
                       <div key={index} className="bonus-item">
-                        <p>Fixture ID: {bonus.fixture_id}</p>
-                        <p>Team Supported: {bonus.team_name}</p>
-                        <p>Bet Amount: ${bonus.amount}</p>
-                        <p>Status: {bonus.status}</p>
+                        <p className='text-colored'>Fixture ID: {bonus.fixture_id}</p>
+                        <p className='text-colored'>Team Supported: {bonus.team_name}</p>
+                        <p className='text-colored'>Bet Amount: ${bonus.amount}</p>
+                        <p className='text-colored'>Status: {bonus.status}</p>
                       </div>
                     ))
                   ) : (
-                    <p>No bonuses found.</p>
+                    <p className='text-colored'>No bonuses found.</p>
                   )}
                   <button onClick={() => setShowModal(false)}>Close</button>
                 </div>
