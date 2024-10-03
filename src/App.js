@@ -13,6 +13,7 @@ function App() {
   const [bonuses, setBonuses] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [showBuyModal, setShowBuyModal] = useState(false); 
+  const [showProcessingModal, setShowProcessingModal] = useState(false);
   const [selectedFixture, setSelectedFixture] = useState(null);
   const [result, setResult] = useState('home');
   const [quantity, setQuantity] = useState(1);
@@ -36,15 +37,8 @@ function App() {
   const fetchUser = async () => {
     try {
       const encodedUserId = localStorage.getItem('userId');
-
-      const token = await getAccessTokenSilently();
-      const response = await axios.get(`https://api.nodecraft.me/users/${encodedUserId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await axios.get(`https://nodecraft.me/users/${encodedUserId}`);
       setWalletBalance(response.data.wallet);
-      setBonuses(response.data.bonos);
     } catch (error) {
       console.error('Error fetching wallet balance:', error);
     }
@@ -52,7 +46,7 @@ function App() {
 
   const fetchFixtures = async () => {
     try {
-      const response = await axios.get('https://api.nodecraft.me/fixtures');
+      const response = await axios.get('https://nodecraft.me/fixtures');
       const uniqueFixtures = removeDuplicateFixtures(response.data.data);
       setFixtures(uniqueFixtures);
       setFilteredFixtures(uniqueFixtures);
@@ -61,11 +55,18 @@ function App() {
     }
   };
 
+  const generateLongUserId = () => {
+    const timestamp = Date.now();
+    const highPrecision = Math.floor(performance.now() * 1000000);
+    const randomPart = Math.floor(Math.random() * 1000000000);
+    return `${timestamp}-${highPrecision}-${randomPart}`;
+  };
+  
   const createUser = async () => {
     try {
-      const token = await getAccessTokenSilently();
-      const encodedUserId = encodeURIComponent(user.sub).substring(16);
-      await axios.post('https://api.nodecraft.me/users', 
+      const encodedUserId = generateLongUserId();
+  
+      await axios.post('https://nodecraft.me/users', 
         { 
           id: encodedUserId,
           username: user.nickname, 
@@ -73,17 +74,14 @@ function App() {
           password: "NoHayPassword", 
           wallet: 0.0, 
           bonos: {} 
-        }, 
-        {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+        }
+      );
       localStorage.setItem('userId', encodedUserId);
     } catch (error) {
       console.error('Error creating user:', error);
     }
   };
+  
 
   const addMoneyToWallet = async () => {
     const amount = prompt('Enter the amount to add to your wallet:');
@@ -93,15 +91,9 @@ function App() {
       try {
         const userId = localStorage.getItem('userId');
 
-        const token = await getAccessTokenSilently();
         const response = await axios.patch(
-          `https://api.nodecraft.me/users/${userId}/wallet`,
-          { amount: parsedAmount },
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
+          `https://nodecraft.me/users/${userId}/wallet`,
+          { amount: parsedAmount }
         );
         setWalletBalance(response.data.wallet);
         alert(`Added $${parsedAmount} to your wallet.`);
@@ -114,7 +106,6 @@ function App() {
     }
 };
 
-
   const handleBuyBonusClick = (fixture) => {
     if (walletBalance >= 1000) {
       setSelectedFixture(fixture);
@@ -125,78 +116,38 @@ function App() {
   };
 
   const buyBonus = async (fixture, result, quantity) => {
-    const cost = 1000;
+    const cost = 1000 * quantity;
     const encodedUserId = localStorage.getItem('userId');
-    const token = await getAccessTokenSilently();
-    if (result === 'draw'){
-      result = '---';
-    }
   
-    if (walletBalance >= cost && fixture.bonos > 0) {
+    if (walletBalance >= cost && fixture.bonos >= quantity) {
+      setShowBuyModal(false);
+      setShowProcessingModal(true);
+  
       try {
-        const request = await axios.post('https://api.nodecraft.me/mqtt/publish-request',
+        const response = await axios.post(
+          `https://nodecraft.me/fixtures/${fixture.fixture_id}/compra`, 
           { 
-            fixture_id: fixture.fixture_id,
-            league_name: fixture.league_name,
-            round: fixture.round,
-            date: fixture.date,
-            result: result,
+            userId: encodedUserId, 
+            result: result, 
             quantity: quantity
           }
         );
-
-        if (!request.data.valid){
-          alert('Invalid request');
-          return;
-        }
-
-        alert('Request sent');
   
-        const response = await axios.patch(
-          `https://api.nodecraft.me/users/${encodedUserId}/wallet`,
-          { amount: -cost },
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-
-        fetchUser();
-
-        alert(`Bought a bonus for fixture ${fixture.fixture_id}`);
-        const fixtureResponse = await axios.patch(
-          `https://api.nodecraft.me/fixtures/${fixture.fixture_id}/bonos`,
-          { bonos: fixture.bonos - 1 },
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );  
-        const addBonusToUser = await axios.patch(
-          `https://api.nodecraft.me/users/${encodedUserId}/bonos`,
-          { bonos: {
-            fixture_id: fixture.fixture_id,
-            league_name: fixture.league_name,
-            round: fixture.round,
-            date: fixture.date,
-            result: result,
-            quantity: quantity
-          }
-         },
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+        setShowProcessingModal(false);
+  
+        if (response.data.error) {
+          alert(response.data.error);
+        } else {
+          alert('Compra exitosa. Ubicación de la solicitud: ' + response.data.location.city);
+          fetchUser();
+          fetchFixtures();
+        }
       } catch (error) {
-        console.error('Error buying bonus:', error);
-        alert('Failed to buy bonus.');
+        setShowProcessingModal(false);
+        alert('Hubo un error al procesar la compra.');
       }
     } else {
-      alert('Insufficient funds in wallet.');
+      alert('Fondos insuficientes o bonos no disponibles.');
     }
   };
 
@@ -340,12 +291,23 @@ function App() {
               ))}
             </div>
 
+            {showProcessingModal && (
+              <div className="modal">
+                <div className="modal-content">
+                  <h2 className='text-colored'>Procesando tu compra...</h2>
+                  <p className='text-colored'>Por favor, espera mientras validamos la compra.</p>
+                  <p className='text-colored'>Te avisaremos cuando hayamos validado tu compra</p>
+                  <button onClick={() => setShowProcessingModal(false)}>Cerrar</button>
+                </div>
+              </div>
+            )}
+
             {showBuyModal && (
               <div className="modal">
                 <div className="modal-content">
-                  <h2 className='text-colored'>Buy Bonus</h2>
-                  <label>
-                    Quantity:
+                  <h2 className='text-colored'>Confirmar Compra</h2>
+                  <label className='text-colored'>
+                    Cantidad:
                     <input
                       type="number"
                       min="1"
@@ -354,18 +316,19 @@ function App() {
                     />
                   </label>
                   <label className='text-colored'>
-                    Result:
+                    Resultado:
                     <select value={result} onChange={(e) => setResult(e.target.value)}>
-                      <option className='text-colored' value="home">Home</option>
-                      <option className='text-colored' value="away">Away</option>
-                      <option className='text-colored' value="draw">Draw</option>
+                      <option value="home">Home</option>
+                      <option value="away">Away</option>
+                      <option value="draw">Draw</option>
                     </select>
                   </label>
-                  <button onClick={buyBonus(selectedFixture, result, quantity)}>Confirm Purchase</button>
-                  <button onClick={() => setShowBuyModal(false)}>Cancel</button>
+                  <button onClick={() => buyBonus(selectedFixture, result, quantity)}>Confirmar Compra</button>
+                  <button onClick={() => setShowBuyModal(false)}>Cancelar</button>
                 </div>
               </div>
             )}
+
 
             {showAddMoneyModal && (
               <div className="modal">
