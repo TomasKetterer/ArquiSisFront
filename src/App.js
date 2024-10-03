@@ -37,7 +37,7 @@ function App() {
   const fetchUser = async () => {
     try {
       const encodedUserId = localStorage.getItem('userId');
-      const response = await axios.get(`https://nodecraft.me/users/${encodedUserId}`);
+      const response = await axios.get(`https://api.nodecraft.me/users/${encodedUserId}`);
       setWalletBalance(response.data.wallet);
     } catch (error) {
       console.error('Error fetching wallet balance:', error);
@@ -46,7 +46,7 @@ function App() {
 
   const fetchFixtures = async () => {
     try {
-      const response = await axios.get('https://nodecraft.me/fixtures');
+      const response = await axios.get('https://api.nodecraft.me/fixtures');
       const uniqueFixtures = removeDuplicateFixtures(response.data.data);
       setFixtures(uniqueFixtures);
       setFilteredFixtures(uniqueFixtures);
@@ -66,7 +66,7 @@ function App() {
     try {
       const encodedUserId = generateLongUserId();
   
-      await axios.post('https://nodecraft.me/users', 
+      await axios.post('https://api.nodecraft.me/users', 
         { 
           id: encodedUserId,
           username: user.nickname, 
@@ -78,6 +78,28 @@ function App() {
       );
       localStorage.setItem('userId', encodedUserId);
     } catch (error) {
+      try {
+        // Obtener la lista de todos los usuarios
+        console.log('Obteniendo id:');
+        const response = await axios.get('https://api.nodecraft.me/users');
+        console.log('obtuve la lista de usuarios')
+        const users = response.data.users;
+        console.log('obtuve users')
+
+        // Filtrar por el usuario que coincida con el email
+        const existingUser = users.find(u => u.email === user.email);
+        console.log('obtuve existingUser')
+
+        if (existingUser) {
+          // Guardar el id del usuario existente en localStorage
+          localStorage.setItem('userId', existingUser.id);
+          console.log('Usuario existente encontrado, id almacenado en localStorage:', existingUser.id);
+        } else {
+          console.error('Usuario no encontrado en la lista de usuarios.');
+        }
+      } catch (getUserError) {
+        console.error('Error al obtener la lista de usuarios:', getUserError);
+      }
       console.error('Error creating user:', error);
     }
   };
@@ -92,7 +114,7 @@ function App() {
         const userId = localStorage.getItem('userId');
 
         const response = await axios.patch(
-          `https://nodecraft.me/users/${userId}/wallet`,
+          `https://api.nodecraft.me/users/${userId}/wallet`,
           { amount: parsedAmount }
         );
         setWalletBalance(response.data.wallet);
@@ -125,7 +147,7 @@ function App() {
   
       try {
         const response = await axios.post(
-          `https://nodecraft.me/fixtures/${fixture.fixture_id}/compra`, 
+          `https://api.nodecraft.me/fixtures/${fixture.fixture_id}/compra`, 
           { 
             userId: encodedUserId, 
             result: result, 
