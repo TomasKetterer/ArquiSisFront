@@ -6,6 +6,7 @@ import { useAuth0 } from '@auth0/auth0-react';
 function App() {
   const { loginWithRedirect, logout, isAuthenticated, user } = useAuth0();
   const [fixtures, setFixtures] = useState([]);
+  const [bonuses] = useState([]);
   const [filteredFixtures, setFilteredFixtures] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [filters, setFilters] = useState({ home: '', away: '', date: '' });
