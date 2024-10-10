@@ -4,13 +4,12 @@ import axios from 'axios';
 import { useAuth0 } from '@auth0/auth0-react';
 
 function App() {
-  const { loginWithRedirect, logout, isAuthenticated, user, getAccessTokenSilently } = useAuth0();
+  const { loginWithRedirect, logout, isAuthenticated, user } = useAuth0();
   const [fixtures, setFixtures] = useState([]);
   const [filteredFixtures, setFilteredFixtures] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [filters, setFilters] = useState({ home: '', away: '', date: '' });
   const [walletBalance, setWalletBalance] = useState(0);
-  const [bonuses, setBonuses] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [showBuyModal, setShowBuyModal] = useState(false); 
   const [showProcessingModal, setShowProcessingModal] = useState(false);
@@ -79,19 +78,16 @@ function App() {
       localStorage.setItem('userId', encodedUserId);
     } catch (error) {
       try {
-        // Obtener la lista de todos los usuarios
         console.log('Obteniendo id:');
         const response = await axios.get('https://api.nodecraft.me/users');
         console.log('obtuve la lista de usuarios')
         const users = response.data.users;
         console.log('obtuve users')
 
-        // Filtrar por el usuario que coincida con el email
         const existingUser = users.find(u => u.email === user.email);
         console.log('obtuve existingUser')
 
         if (existingUser) {
-          // Guardar el id del usuario existente en localStorage
           localStorage.setItem('userId', existingUser.id);
           console.log('Usuario existente encontrado, id almacenado en localStorage:', existingUser.id);
         } else {
@@ -183,7 +179,7 @@ function App() {
       fetchFixtures();
       fetchUser();
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, createUser, fetchFixtures, fetchUser]);
 
   useEffect(() => {
     const applyFilters = () => {
