@@ -1,19 +1,22 @@
 {
   "name": "entrega1",
-  "version": "0.1.0",
   "private": true,
   "dependencies": {
     "@auth0/auth0-react": "^2.2.4",
+    "@svgr/webpack": "^8.1.0",
     "@testing-library/jest-dom": "^5.17.0",
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",
     "axios": "^1.7.7",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "react-scripts": "^3.0.1",
+    "react-scripts": "^5.0.1",
+    "resolve-url-loader": "^5.0.0",
+    "svgo": "^3.3.2",
     "web-vitals": "^2.1.4"
   },
   "scripts": {
+    "preinstall": "npx npm-force-resolutions",
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
@@ -25,6 +28,10 @@
       "react-app",
       "react-app/jest"
     ]
+  },
+  "resolutions": {
+    "postcss": "^8.4.31",
+    "nth-check": "^2.0.1"
   },
   "browserslist": {
     "production": [
@@ -39,6 +46,8 @@
     ]
   },
   "devDependencies": {
-    "@babel/plugin-transform-private-property-in-object": "^7.25.8"
+    "@babel/plugin-transform-private-property-in-object": "^7.25.8",
+    "@babel/plugin-proposal-private-property-in-object": "^7.14.5",
+    "npm-force-resolutions": "^0.0.10"
   }
 }

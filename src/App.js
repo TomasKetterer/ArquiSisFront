@@ -1,5 +1,5 @@
 import './App.css';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { useAuth0 } from '@auth0/auth0-react';
 
@@ -34,7 +34,7 @@ function App() {
     return uniqueFixtures;
   };
 
-  const fetchUser = async () => {
+  const fetchUser = useCallback(async () => {
     try {
       const encodedUserId = localStorage.getItem('userId');
       const response = await axios.get(`https://api.nodecraft.me/users/${encodedUserId}`);
@@ -42,9 +42,9 @@ function App() {
     } catch (error) {
       console.error('Error fetching wallet balance:', error);
     }
-  };
+  }, []);
 
-  const fetchFixtures = async () => {
+  const fetchFixtures = useCallback(async () => {
     try {
       const response = await axios.get('https://api.nodecraft.me/fixtures');
       const uniqueFixtures = removeDuplicateFixtures(response.data.data);
@@ -53,7 +53,7 @@ function App() {
     } catch (error) {
       console.error('Error fetching fixtures:', error);
     }
-  };
+  }, []);
 
   const generateLongUserId = () => {
     const timestamp = Date.now();
@@ -62,7 +62,7 @@ function App() {
     return `${timestamp}-${highPrecision}-${randomPart}`;
   };
   
-  const createUser = async () => {
+  const createUser = useCallback(async () => {
     try {
       const encodedUserId = generateLongUserId();
   
@@ -99,7 +99,7 @@ function App() {
       }
       console.error('Error creating user:', error);
     }
-  };
+  }, [user]);
   
 
   const addMoneyToWallet = async () => {
