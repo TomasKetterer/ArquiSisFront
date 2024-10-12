@@ -173,14 +173,14 @@ function App() {
   const viewMyBonuses = () => {
     setShowModal(true);
   };
-
+// eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (isAuthenticated) {
       createUser();
       fetchFixtures();
       fetchUser();
     }
-  }, [isAuthenticated, createUser, fetchFixtures, fetchUser]);
+  }, [isAuthenticated]);
 
   useEffect(() => {
     const applyFilters = () => {
