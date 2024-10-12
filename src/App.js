@@ -180,7 +180,7 @@ function App() {
       fetchFixtures();
       fetchUser();
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, createUser, fetchFixtures, fetchUser]);
 
   useEffect(() => {
     const applyFilters = () => {
