@@ -18,7 +18,7 @@ function App() {
   const [result, setResult] = useState('home');
   const [quantity, setQuantity] = useState(1);
   const [showAddMoneyModal, setShowAddMoneyModal] = useState(false);
-  const fixturesPerPage = 9;
+  const fixturesPerPage = 12;
 
   const removeDuplicateFixtures = (fixtures) => {
     const uniqueFixtures = [];
@@ -76,50 +76,48 @@ function App() {
   
   const createUser = useCallback(async () => {
     try {
-      const encodedUserId = generateLongUserId();
-  
       const token = await getAccessTokenSilently();
-      await axios.post('https://api.nodecraft.me/users', 
-        { 
-          id: encodedUserId,
-          username: user.nickname, 
-          email: user.email, 
-          password: "NoHayPassword", 
-          wallet: 0.0, 
-          bonos: {} 
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`
+      
+      console.log('Checking for existing user...');
+      const response = await axios.get('https://api.nodecraft.me/users', {
+        headers: {
+          Authorization: `Bearer ${token}`
         }
-    });
-      localStorage.setItem('userId', encodedUserId);
-    } catch (error) {
-      try {
-        console.log('Obteniendo id:');
-        const token = await getAccessTokenSilently();
-        const response = await axios.get('https://api.nodecraft.me/users',
-          {
-            headers: {
-              Authorization: `Bearer ${token}`
-            }
       });
-        const users = response.data.users;
-
-        const existingUser = users.find(u => u.email === user.email);
-
-        if (existingUser) {
-          localStorage.setItem('userId', existingUser.id);
-          console.log('Usuario existente encontrado, id almacenado en localStorage:', existingUser.id);
-        } else {
-          console.error('Usuario no encontrado en la lista de usuarios.');
-        }
-      } catch (getUserError) {
-        console.error('Error al obtener la lista de usuarios:', getUserError);
+      
+      const users = response.data.users;
+      const existingUser = users.find(u => u.email === user.email);
+      
+      if (existingUser) {
+        localStorage.setItem('userId', existingUser.id);
+        console.log('Existing user found. User ID stored in localStorage:', existingUser.id);
+        return;
       }
-      console.error('Error creating user:', error);
+      
+      console.log('No existing user found, creating a new user...');
+      const encodedUserId = generateLongUserId();
+      
+      await axios.post('https://api.nodecraft.me/users', {
+        id: encodedUserId,
+        username: user.nickname,
+        email: user.email,
+        password: "NoHayPassword",
+        wallet: 0.0,
+        bonos: {}
+      }, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+      
+      localStorage.setItem('userId', encodedUserId);
+      console.log('New user created. User ID stored in localStorage:', encodedUserId);
+      
+    } catch (error) {
+      console.error('Error creating or fetching user:', error);
     }
   }, [getAccessTokenSilently, user]);
+  
   
 
   const addMoneyToWallet = async () => {
@@ -232,11 +230,17 @@ function App() {
   
 
   useEffect(() => {
-    if (isAuthenticated) {
-      createUser();
-      fetchFixtures();
-      fetchUser();
-    }
+    const initializeApp = async () => {
+      if (isAuthenticated) {
+        await createUser();
+        setTimeout(async () => {
+          await fetchFixtures();
+          await fetchUser();
+        }, 3000);
+      }
+    };
+  
+    initializeApp();
   }, [isAuthenticated, createUser, fetchFixtures, fetchUser]);
 
   useEffect(() => {
@@ -282,6 +286,7 @@ function App() {
             <button onClick={() => logout({ returnTo: window.location.origin })}>
               Log Out
             </button>
+            <p>User id: {localStorage.getItem('userId')}</p>
             <div className="wallet-balance">
               <p>Wallet Balance: ${walletBalance}</p>
               <button onClick={addMoneyToWallet}>Add Money to Wallet</button>
