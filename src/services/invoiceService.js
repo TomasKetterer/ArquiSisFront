@@ -1,13 +1,33 @@
 import axios from 'axios';
 
-export const generateInvoice = async (userId) => {
+export const generateInvoice = async (userData, matchData) => {
   try {
+
     const response = await axios.post('https://axp8mrrbk1.execute-api.us-east-1.amazonaws.com/generate', {
-      userId: userId,
-      teams: ['Team A', 'Team B']  // Aquí puedes pasar los equipos del partido
+      userData: {
+        name: userData.name,
+        email: userData.email
+      },
+      matchData: {
+        teams: {
+          home: {
+            id: matchData.teams.home.id,
+            name: matchData.teams.home.name,
+            logo: matchData.teams.home.logo,
+            winner: matchData.teams.home.winner
+          },
+          away: {
+            id: matchData.teams.away.id,
+            name: matchData.teams.away.name,
+            logo: matchData.teams.away.logo,
+            winner: matchData.teams.away.winner
+          }
+        },
+        date: matchData.date,
+        amount: matchData.amount
+      }
     });
 
-    // Si la boleta se genera correctamente, devuelve la URL del PDF
     if (response.data && response.data.pdfUrl) {
       return response.data.pdfUrl;
     } else {
