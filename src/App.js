@@ -2,6 +2,7 @@ import './App.css';
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth0 } from '@auth0/auth0-react';
+import { generateInvoice } from './services/invoiceService.js';
 
 function App() {
   const { loginWithRedirect, logout, isAuthenticated, user, getAccessTokenSilently } = useAuth0();
@@ -18,6 +19,7 @@ function App() {
   const [result, setResult] = useState('home');
   const [quantity, setQuantity] = useState(1);
   const [showAddMoneyModal, setShowAddMoneyModal] = useState(false);
+
   const fixturesPerPage = 24;
 
   const removeDuplicateFixtures = (fixtures) => {
@@ -138,9 +140,28 @@ function App() {
         if (response.data.error) {
           alert(response.data.error);
         } else {
-          alert('Compra exitosa. Ubicación de la solicitud: ' + response.data.location.city);
-          fetchUser();
-          fetchFixtures();
+
+          // Agregado generación de boleta post compra
+          const userData = {
+            name: user.nickname,
+            email: user.email
+          };
+
+          const matchData = {
+            teams: fixture.teams,
+            date: fixture.date,
+            amount: cost  // El valor depende de la cantidad
+          };
+
+          // Se genera el URL de la boleta y además se informa la ubicación
+          try {
+            const pdfUrl = await generateInvoice(userData, matchData);
+            alert(`Compra exitosa. Descarga tu boleta aquí: ${pdfUrl}. Ubicación: ${response.data.location.city}`);
+            fetchUser();
+            fetchFixtures();
+          } catch (error) {
+            alert('Error generando la boleta.');
+          }
         }
       } catch (error) {
         setShowProcessingModal(false);

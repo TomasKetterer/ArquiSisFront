@@ -2,8 +2,11 @@
 
 # dependencies
 /node_modules
+!pdf-generator/node_modules/
 /.pnp
 .pnp.js
+/package-lock.json
+/yarn.lock
 
 # testing
 /coverage
