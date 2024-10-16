@@ -1,6 +1,7 @@
 {
   "name": "entrega1",
   "private": true,
+  "type": "module",
   "dependencies": {
     "@auth0/auth0-react": "^2.2.4",
     "@svgr/webpack": "^8.1.0",
@@ -10,9 +11,10 @@
     "axios": "^1.7.7",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "react-scripts": "^5.0.1",
     "resolve-url-loader": "^5.0.0",
     "svgo": "^3.3.2",
+    "react-scripts": "5.0.1",
+    "serverless": "^4.4.6",
     "web-vitals": "^2.1.4"
   },
   "scripts": {
