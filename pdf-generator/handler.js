@@ -6,40 +6,40 @@ const { PDFDocument } = require("pdf-lib");
 const app = express();
 const S3 = new AWS.S3();
 
-// Middleware para manejar el cuerpo de las solicitudes en JSON
 app.use(express.json());
 
 app.post("/generate", async (req, res) => {
   try {
     const { userData, matchData } = req.body;
 
-    // Validar los datos recibidos
     if (!userData || !matchData) {
       return res.status(400).json({ message: "Datos incompletos" });
     }
 
-    // Crear el PDF
+    const { home, away } = matchData.teams;
+
     const pdfDoc = await PDFDocument.create();
     const page = pdfDoc.addPage([600, 400]);
-    page.drawText(`Nombre del grupo: ${userData.groupName}`, { x: 50, y: 350 });
+
     page.drawText(`Usuario: ${userData.name}`, { x: 50, y: 330 });
-    page.drawText(`Partido: ${matchData.teams}`, { x: 50, y: 310 });
+    page.drawText(`Correo: ${userData.email}`, { x: 50, y: 310 });
+    page.drawText(`Partido:`, { x: 50, y: 290 });
+    page.drawText(`Equipo Local: ${home.name}`, { x: 50, y: 270 });
+    page.drawText(`Equipo Visitante: ${away.name}`, { x: 50, y: 250 });
+    page.drawText(`Fecha del Partido: ${matchData.date}`, { x: 50, y: 230 });
+    page.drawText(`Monto de la compra: ${matchData.amount}`, { x: 50, y: 210 });
 
     const pdfBytes = await pdfDoc.save();
 
-    // Parámetros para subir el PDF a S3
     const params = {
-      Bucket: 'node-craft',  // Cambia esto por el nombre correcto de tu bucket S3
-      Key: `boletas/${userData.name}.pdf`,  // Nombre del archivo PDF en S3
+      Bucket: 'node-craft',
+      Key: `boletas/${userData.name}_${Date.now()}.pdf`,
       Body: Buffer.from(pdfBytes),
       ContentType: 'application/pdf',
-      ACL: 'public-read'  // Permitir acceso público
     };
 
-    // Subir el archivo PDF a S3
     const data = await S3.upload(params).promise();
 
-    // Devolver la URL pública del archivo PDF
     res.status(200).json({
       message: "Boleta generada con éxito",
       pdfUrl: data.Location
@@ -50,5 +50,4 @@ app.post("/generate", async (req, res) => {
   }
 });
 
-// Exportar el handler para AWS Lambda
 module.exports.handler = serverless(app);
