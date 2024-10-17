@@ -34,8 +34,8 @@ function App() {
 
     return uniqueFixtures;
   };
-
-  const fetchUser = useCallback(async () => {
+// eslint-disable-next-line
+  const fetchUser = async () => {
     try {
       const encodedUserId = localStorage.getItem('userId');
       const token = await getAccessTokenSilently();
@@ -49,9 +49,9 @@ function App() {
     } catch (error) {
       console.error('Error fetching wallet balance:', error);
     }
-  }, [getAccessTokenSilently]);
+  };
 
-  const fetchFixtures = useCallback(async () => {
+  const fetchFixtures = async () => {
     try {
       const token = await getAccessTokenSilently();
       const response = await axios.get('https://api.nodecraft.me/fixtures',
@@ -66,7 +66,7 @@ function App() {
     } catch (error) {
       console.error('Error fetching fixtures:', error);
     }
-  }, [getAccessTokenSilently]);
+  };
 
   const generateLongUserId = () => {
     const timestamp = Date.now();
@@ -75,7 +75,7 @@ function App() {
     return `${timestamp}-${highPrecision}-${randomPart}`;
   };
   
-  const createUser = useCallback(async () => {
+  const createUser = async () => {
     try {
       const token = await getAccessTokenSilently();
       
@@ -117,7 +117,7 @@ function App() {
     } catch (error) {
       console.error('Error creating or fetching user:', error);
     }
-  }, [getAccessTokenSilently, user]);
+  };
   
   
 
