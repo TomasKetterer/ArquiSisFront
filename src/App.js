@@ -77,45 +77,40 @@ function App() {
   // eslint-disable-next-line
   const createUser = async () => {
     try {
-      const token = await getAccessTokenSilently();
-      
-      console.log('Checking for existing user...');
-      const response = await axios.get('https://api.nodecraft.me/users', {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-      
-      const users = response.data.users;
-      const existingUser = users.find(u => u.email === user.email);
-      
-      if (existingUser) {
-        localStorage.setItem('userId', existingUser.id);
-        console.log('Existing user found. User ID stored in localStorage:', existingUser.id);
-        return;
-      }
-      
-      console.log('No existing user found, creating a new user...');
       const encodedUserId = generateLongUserId();
-      
-      await axios.post('https://api.nodecraft.me/users', {
-        id: encodedUserId,
-        username: user.nickname,
-        email: user.email,
-        password: "NoHayPassword",
-        wallet: 0.0,
-        bonos: {}
-      }, {
-        headers: {
-          Authorization: `Bearer ${token}`
+  
+      await axios.post('https://api.nodecraft.me/users', 
+        { 
+          id: encodedUserId,
+          username: user.nickname, 
+          email: user.email, 
+          password: "NoHayPassword", 
+          wallet: 0.0, 
+          bonos: {} 
         }
-      });
-      
+      );
       localStorage.setItem('userId', encodedUserId);
-      console.log('New user created. User ID stored in localStorage:', encodedUserId);
-      
     } catch (error) {
-      console.error('Error creating or fetching user:', error);
+      try {
+        console.log('Obteniendo id:');
+        const response = await axios.get('https://api.nodecraft.me/users');
+        console.log('obtuve la lista de usuarios')
+        const users = response.data.users;
+        console.log('obtuve users')
+
+        const existingUser = users.find(u => u.email === user.email);
+        console.log('obtuve existingUser')
+
+        if (existingUser) {
+          localStorage.setItem('userId', existingUser.id);
+          console.log('Usuario existente encontrado, id almacenado en localStorage:', existingUser.id);
+        } else {
+          console.error('Usuario no encontrado en la lista de usuarios.');
+        }
+      } catch (getUserError) {
+        console.error('Error al obtener la lista de usuarios:', getUserError);
+      }
+      console.error('Error creating user:', error);
     }
   };
   
