@@ -241,14 +241,15 @@ function App() {
     }
   };
   
-// eslint-disable-next-line
+  // eslint-disable-next-line
   useEffect(() => {
     if (isAuthenticated) {
       createUser();
       fetchFixtures();
       fetchUser();
     }
-  }, [isAuthenticated]);
+  // eslint-disable-next-line
+  }, [isAuthenticated, createUser, fetchFixtures, fetchUser]);
 
   useEffect(() => {
     const applyFilters = () => {
