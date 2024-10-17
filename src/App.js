@@ -241,20 +241,14 @@ function App() {
     }
   };
   
-
+// eslint-disable-next-line
   useEffect(() => {
-    const initializeApp = async () => {
-      if (isAuthenticated) {
-        await createUser();
-        setTimeout(async () => {
-          await fetchFixtures();
-          await fetchUser();
-        }, 3000);
-      }
-    };
-  
-    initializeApp();
-  }, [isAuthenticated, createUser, fetchFixtures, fetchUser]);
+    if (isAuthenticated) {
+      createUser();
+      fetchFixtures();
+      fetchUser();
+    }
+  }, [isAuthenticated]);
 
   useEffect(() => {
     const applyFilters = () => {
