@@ -1,5 +1,5 @@
 import './App.css';
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth0 } from '@auth0/auth0-react';
 import { generateInvoice } from './services/invoiceService.js';
@@ -50,7 +50,7 @@ function App() {
       console.error('Error fetching wallet balance:', error);
     }
   };
-
+// eslint-disable-next-line
   const fetchFixtures = async () => {
     try {
       const token = await getAccessTokenSilently();
@@ -74,7 +74,7 @@ function App() {
     const randomPart = Math.floor(Math.random() * 1000000000);
     return `${timestamp}-${highPrecision}-${randomPart}`;
   };
-  
+  // eslint-disable-next-line
   const createUser = async () => {
     try {
       const token = await getAccessTokenSilently();
@@ -119,8 +119,6 @@ function App() {
     }
   };
   
-  
-
   const addMoneyToWallet = async () => {
     const amount = prompt('Enter the amount to add to your wallet:');
     const parsedAmount = parseInt(amount, 10);
