@@ -85,8 +85,9 @@ function App() {
         id: newUserId,
         username: user.nickname,
         email: user.email,
-        password: "No hay password",
-        wallet: 0.0
+        password: "Nohaypassword",
+        wallet: 0.0,
+        bonos: {}
       },
       {
         headers: {
