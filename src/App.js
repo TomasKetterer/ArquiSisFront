@@ -249,7 +249,7 @@ function App() {
       fetchUser();
     }
   // eslint-disable-next-line
-  }, [isAuthenticated, createUser, fetchFixtures, fetchUser]);
+  }, [isAuthenticated]);
 
   useEffect(() => {
     const applyFilters = () => {
