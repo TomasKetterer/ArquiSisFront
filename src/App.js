@@ -19,6 +19,7 @@ function App() {
   const [result, setResult] = useState('home');
   const [quantity, setQuantity] = useState(1);
   const [showAddMoneyModal, setShowAddMoneyModal] = useState(false);
+  const [authAction, setAuthAction] = useState(null);
   const fixturesPerPage = 12;
 
   const removeDuplicateFixtures = (fixtures) => {
@@ -75,42 +76,58 @@ function App() {
     return `${timestamp}-${highPrecision}-${randomPart}`;
   };
   // eslint-disable-next-line
-  const createUser = async () => {
+  const signUpUser = async () => {
     try {
-      const encodedUserId = generateLongUserId();
-  
-      await axios.post('https://api.nodecraft.me/users', 
-        { 
-          id: encodedUserId,
-          username: user.nickname, 
-          email: user.email, 
-          password: "NoHayPassword", 
-          wallet: 0.0, 
-          bonos: {} 
-        }
+      const token = await getAccessTokenSilently();
+      const newUserId = generateLongUserId();
+      
+      await axios.post('https://api.nodecraft.me/users', {
+        id: newUserId,
+        username: user.nickname,
+        email: user.email,
+        password: "No hay password",
+        wallet: 0.0
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`
+        },
+      }
       );
-      localStorage.setItem('userId', encodedUserId);
+      localStorage.setItem('userId', newUserId);
+      fetchUser();
+      fetchFixtures();
     } catch (error) {
-      try {
-        console.log('Obteniendo id:');
-        const response = await axios.get('https://api.nodecraft.me/users');
-        console.log('obtuve la lista de usuarios')
-        const users = response.data.users;
-        console.log('obtuve users')
+      console.error('Error signing up user:', error);
+    }
+  };
 
-        const existingUser = users.find(u => u.email === user.email);
-        console.log('obtuve existingUser')
+  const logInUser = async () => {
+    try {
+      let userId = localStorage.getItem('userId');
+      if (!userId) {
+        const token = await getAccessTokenSilently();
+        const response = await axios.get('https://api.nodecraft.me/users', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        const users = response.data.users;
+        const existingUser = users.find((u) => u.email === user.email);
 
         if (existingUser) {
-          localStorage.setItem('userId', existingUser.id);
-          console.log('Usuario existente encontrado, id almacenado en localStorage:', existingUser.id);
+          userId = existingUser.id;
+          localStorage.setItem('userId', userId);
+          fetchUser();
+          fetchFixtures();
         } else {
-          console.error('Usuario no encontrado en la lista de usuarios.');
+          console.error('User not found.');
+          alert('User not found. Please sign up.');
         }
-      } catch (getUserError) {
-        console.error('Error al obtener la lista de usuarios:', getUserError);
       }
-      console.error('Error creating user:', error);
+    } catch (error) {
+      console.error('Error logging in user:', error);
     }
   };
   
@@ -243,13 +260,36 @@ function App() {
   
   // eslint-disable-next-line
   useEffect(() => {
-    if (isAuthenticated) {
-      createUser();
-      fetchFixtures();
-      fetchUser();
-    }
-  // eslint-disable-next-line
-  }, [isAuthenticated]);
+    const initializeUser = async () => {
+      if (isAuthenticated && authAction) {
+        try {
+          if (authAction === 'signup') {
+            await signUpUser();
+          } else if (authAction === 'login') {
+            await logInUser();
+          }
+        } catch (error) {
+          console.error('Error initializing user:', error);
+        }
+      }
+    };
+
+    initializeUser();
+    // eslint-disable-next-line
+  }, [isAuthenticated, authAction]);
+
+  const handleLogInClick = () => {
+    setAuthAction('login');
+    loginWithRedirect();
+  };
+
+  const handleSignUpClick = () => {
+    setAuthAction('signup');
+    loginWithRedirect({
+      screen_hint: 'signup'
+    });
+  };
+  
 
   useEffect(() => {
     const applyFilters = () => {
@@ -294,7 +334,6 @@ function App() {
             <button onClick={() => logout({ returnTo: window.location.origin })}>
               Log Out
             </button>
-            <p>User id: {localStorage.getItem('userId')}</p>
             <div className="wallet-balance">
               <p>Wallet Balance: ${walletBalance}</p>
               <button onClick={addMoneyToWallet}>Add Money to Wallet</button>
@@ -458,7 +497,8 @@ function App() {
           <div className="welcome-container">
             <h1>Welcome to NodeCraft</h1>
             <p>Your ultimate destination for football fixtures and more!</p>
-            <button onClick={() => loginWithRedirect()}>Log In</button>
+            <button onClick={handleLogInClick}>Log In</button>
+            <button onClick={handleSignUpClick}>Sign Up</button>
           </div>
         )}
       </header>
