@@ -1,7 +1,8 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
-import App from './App.js';
+import Routing from './Routing.jsx';
+import App from './App.jsx';
 import reportWebVitals from './reportWebVitals.js';
 import { Auth0Provider } from '@auth0/auth0-react';
 
@@ -15,7 +16,7 @@ root.render(
       redirectUri={window.location.origin}
       audience="https://api.nodecraft.me"
     >
-      <App />
+      <Routing />
     </Auth0Provider>
   </React.StrictMode>
 );
