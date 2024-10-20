@@ -86,7 +86,7 @@ export const signUpUser = async (user, getAccessTokenSilently) => {
         const token = await getAccessTokenSilently();
         const newUserId = generateLongUserId();
 
-        await axios.post('https://api.nodecraft.me/users', {
+        const response = await axios.post('https://api.nodecraft.me/users', {
             id: newUserId,
             username: user.nickname,
             email: user.email,
@@ -99,8 +99,35 @@ export const signUpUser = async (user, getAccessTokenSilently) => {
             },
         }
         );
-        localStorage.setItem('userId', newUserId);
-        return newUserId;
+        if (response.status === 201) {
+            localStorage.setItem('userId', newUserId);
+            if (localStorage.getItem('authAction') === 'signup') {
+                localStorage.removeItem('authAction');
+                return newUserId;
+            }
+        } else {
+            console.log('User must be already registered');
+            // get the user id from the email
+            const response = await axios.get(`https://api.nodecraft.me/users`, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            });
+            console.log(response.data.users);
+            const users = response.data.users;
+            console.log(user.email);
+            const existingUser = users.find(u => u.email === user.email);
+            if (existingUser) {
+                console.log(existingUser.id);
+                localStorage.setItem('userId', existingUser.id);
+                if (localStorage.getItem('authAction') === 'signup') {
+                    localStorage.removeItem('authAction');
+                    return existingUser.id;
+                }
+            } else {
+                throw new Error('No user found with this email.');
+            }
+        }
         // await fetchUser(newUserId, getAccessTokenSilently);
         // await fetchFixtures(getAccessTokenSilently);
         // esto se hace al llamar a signUpUser en el componente
@@ -118,14 +145,31 @@ export const signUpUser = async (user, getAccessTokenSilently) => {
  * @returns {Promise<void>}
  */
 
-export const logInUser = async (getAccessTokenSilently, fetchUser) => {
+export const logInUser = async (email, getAccessTokenSilently, fetchUser) => {
     try {
+        // debo obtener el id del usuario a partir del email
         let userId = localStorage.getItem('userId');
-        if (userId) {
-            const wallet = await fetchUser(userId, getAccessTokenSilently);
-            return wallet;
-        } else {
-            throw new Error('No user ID found in local storage.');
+        if (!userId) {
+            const token = await getAccessTokenSilently();
+            const response = await axios.get(`https://api.nodecraft.me/users`, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            });
+            console.log(response.data.users);
+            const users = response.data.users;
+            const existingUser = users.find(user => user.email === email);
+            if (existingUser) {
+                userId = existingUser.id;
+                localStorage.setItem('userId', userId);
+                if (localStorage.getItem('authAction') === 'login') {
+                    localStorage.removeItem('authAction');
+                    const wallet = await fetchUser(userId, getAccessTokenSilently);
+                    return wallet;
+                }
+            } else {
+                throw new Error('No user found with this email.');
+            }
         }
     } catch (error) {
         console.error('Error logging in user:', error);

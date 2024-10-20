@@ -27,7 +27,9 @@ function App() {
   const [result, setResult] = useState('home');
   const [quantity, setQuantity] = useState(1);
   const [showAddMoneyModal, setShowAddMoneyModal] = useState(false);
-  const [authAction, setAuthAction] = useState(null);
+  const [authAction, setAuthAction] = useState(() => {
+    return localStorage.getItem('authAction') || null;
+  });
 
   const fixturesPerPage = 12;
 
@@ -276,17 +278,24 @@ function App() {
   // eslint-disable-next-line
   useEffect(() => {
     const initializeUser = async () => {
+      if (authAction !== null) {
+        localStorage.setItem('authAction', authAction);
+      }
       if (isAuthenticated && authAction) {
         try {
           if (authAction === 'signup') {
+            console.log("Entré en signUpUser");
             const newUserId = await signUpUser(user, getAccessTokenSilently);
+            console.log("aaaa")
             const wallet = await fetchUser(newUserId, getAccessTokenSilently);
             setWalletBalance(wallet);
             const uniqueFixtures = await fetchFixtures(getAccessTokenSilently);
             setFixtures(uniqueFixtures);
             setFilteredFixtures(uniqueFixtures);
           } else if (authAction === 'login') {
-            const wallet = await logInUser(getAccessTokenSilently, fetchUser);
+            console.log("Entré en logInUser");
+            const wallet = await logInUser(user.email, getAccessTokenSilently, fetchUser);
+            console.log("aaaa")
             setWalletBalance(wallet);
             const uniqueFixtures = await fetchFixtures(getAccessTokenSilently);
             setFixtures(uniqueFixtures);
@@ -303,11 +312,13 @@ function App() {
   }, [isAuthenticated, authAction]);
 
   const handleLogInClick = () => {
+    console.log("Entré en handleLogInClick");
     setAuthAction('login');
     loginWithRedirect();
   };
 
   const handleSignUpClick = () => {
+    console.log("Entré en handleSignUpClick");
     setAuthAction('signup');
     loginWithRedirect({
       screen_hint: 'signup'
@@ -384,14 +395,24 @@ function App() {
     }
   };
 
+  const handleLogout = () => {
+    // Eliminar userId del localStorage
+    localStorage.removeItem('userId');
+
+    // Llamar a la función logout
+    // logout({ returnTo: window.location.origin });
+    logout({ returnTo: 'http://localhost:3000/' }); // debugging
+
+  };
+
   return (
     <div className="App">
       <header className="App-header">
         {isAuthenticated ? (
           <>
             <img src={user.picture} alt={user.name} className="App-logo" />
-            <p>Welcome,</p>
-            <button onClick={() => logout({ returnTo: window.location.origin })}>
+            <p>Welcome, {user.name} con mail {user.email}</p>
+            <button onClick={handleLogout}>
               Log Out
             </button>
             <div className="wallet-balance">
