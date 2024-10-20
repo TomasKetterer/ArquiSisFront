@@ -3,6 +3,14 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth0 } from '@auth0/auth0-react';
 import { generateInvoice } from './services/invoiceService.js';
+import {
+  fetchUser,
+  fetchFixtures,
+  signUpUser,
+  logInUser,
+  addMoneyToWallet as addMoneyService,
+  viewMyBonuses as viewMyBonusesService,
+} from './services/apiService.jsx';
 
 function App() {
   const { loginWithRedirect, logout, isAuthenticated, user, getAccessTokenSilently } = useAuth0();
@@ -20,145 +28,146 @@ function App() {
   const [quantity, setQuantity] = useState(1);
   const [showAddMoneyModal, setShowAddMoneyModal] = useState(false);
   const [authAction, setAuthAction] = useState(null);
+
   const fixturesPerPage = 12;
 
-  const removeDuplicateFixtures = (fixtures) => {
-    const uniqueFixtures = [];
-    const fixtureIds = new Set();
+  // const removeDuplicateFixtures = (fixtures) => {
+  //   const uniqueFixtures = [];
+  //   const fixtureIds = new Set();
 
-    for (const fixture of fixtures) {
-      if (!fixtureIds.has(fixture.fixture_id)) {
-        fixtureIds.add(fixture.fixture_id);
-        uniqueFixtures.push(fixture);
-      }
-    }
+  //   for (const fixture of fixtures) {
+  //     if (!fixtureIds.has(fixture.fixture_id)) {
+  //       fixtureIds.add(fixture.fixture_id);
+  //       uniqueFixtures.push(fixture);
+  //     }
+  //   }
 
-    return uniqueFixtures;
-  };
+  //   return uniqueFixtures;
+  // };
 // eslint-disable-next-line
-  const fetchUser = async () => {
-    try {
-      const encodedUserId = localStorage.getItem('userId');
-      const token = await getAccessTokenSilently();
-      const response = await axios.get(`https://api.nodecraft.me/users/${encodedUserId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-    });
-      setWalletBalance(response.data.wallet);
-    } catch (error) {
-      console.error('Error fetching wallet balance:', error);
-    }
-  };
+  // const fetchUser = async () => {
+  //   try {
+  //     const encodedUserId = localStorage.getItem('userId');
+  //     const token = await getAccessTokenSilently();
+  //     const response = await axios.get(`https://api.nodecraft.me/users/${encodedUserId}`,
+  //       {
+  //         headers: {
+  //           Authorization: `Bearer ${token}`
+  //         }
+  //   });
+  //     setWalletBalance(response.data.wallet);
+  //   } catch (error) {
+  //     console.error('Error fetching wallet balance:', error);
+  //   }
+  // };
 // eslint-disable-next-line
-  const fetchFixtures = async () => {
-    try {
-      const token = await getAccessTokenSilently();
-      const response = await axios.get('https://api.nodecraft.me/fixtures',
-        {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-    });
-      const uniqueFixtures = removeDuplicateFixtures(response.data.data);
-      setFixtures(uniqueFixtures);
-      setFilteredFixtures(uniqueFixtures);
-    } catch (error) {
-      console.error('Error fetching fixtures:', error);
-    }
-  };
+  // const fetchFixtures = async () => {
+  //   try {
+  //     const token = await getAccessTokenSilently();
+  //     const response = await axios.get('https://api.nodecraft.me/fixtures',
+  //       {
+  //         headers: {
+  //           Authorization: `Bearer ${token}`
+  //         }
+  //   });
+  //     const uniqueFixtures = removeDuplicateFixtures(response.data.data);
+  //     setFixtures(uniqueFixtures);
+  //     setFilteredFixtures(uniqueFixtures);
+  //   } catch (error) {
+  //     console.error('Error fetching fixtures:', error);
+  //   }
+  // };
 
-  const generateLongUserId = () => {
-    const timestamp = Date.now();
-    const highPrecision = Math.floor(performance.now() * 1000000);
-    const randomPart = Math.floor(Math.random() * 1000000000);
-    return `${timestamp}-${highPrecision}-${randomPart}`;
-  };
+  // const generateLongUserId = () => {
+  //   const timestamp = Date.now();
+  //   const highPrecision = Math.floor(performance.now() * 1000000);
+  //   const randomPart = Math.floor(Math.random() * 1000000000);
+  //   return `${timestamp}-${highPrecision}-${randomPart}`;
+  // };
   // eslint-disable-next-line
-  const signUpUser = async () => {
-    try {
-      const token = await getAccessTokenSilently();
-      const newUserId = generateLongUserId();
+  // const signUpUser = async () => {
+  //   try {
+  //     const token = await getAccessTokenSilently();
+  //     const newUserId = generateLongUserId();
       
-      await axios.post('https://api.nodecraft.me/users', {
-        id: newUserId,
-        username: user.nickname,
-        email: user.email,
-        password: "Nohaypassword",
-        wallet: 0.0
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${token}`
-        },
-      }
-      );
-      localStorage.setItem('userId', newUserId);
-      fetchUser();
-      fetchFixtures();
-    } catch (error) {
-      console.error('Error signing up user:', error);
-    }
-  };
+  //     await axios.post('https://api.nodecraft.me/users', {
+  //       id: newUserId,
+  //       username: user.nickname,
+  //       email: user.email,
+  //       password: "Nohaypassword",
+  //       wallet: 0.0
+  //     },
+  //     {
+  //       headers: {
+  //         Authorization: `Bearer ${token}`
+  //       },
+  //     }
+  //     );
+  //     localStorage.setItem('userId', newUserId);
+  //     fetchUser();
+  //     fetchFixtures();
+  //   } catch (error) {
+  //     console.error('Error signing up user:', error);
+  //   }
+  // };
 
-  const logInUser = async () => {
-    try {
-      let userId = localStorage.getItem('userId');
-      if (!userId) {
-        const token = await getAccessTokenSilently();
-        const response = await axios.get('https://api.nodecraft.me/users', {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+//   const logInUser = async () => {
+//     try {
+//       let userId = localStorage.getItem('userId');
+//       if (!userId) {
+//         const token = await getAccessTokenSilently();
+//         const response = await axios.get('https://api.nodecraft.me/users', {
+//           headers: {
+//             Authorization: `Bearer ${token}`,
+//           },
+//         });
 
-        const users = response.data.users;
-        const existingUser = users.find((u) => u.email === user.email);
+//         const users = response.data.users;
+//         const existingUser = users.find((u) => u.email === user.email);
 
-        if (existingUser) {
-          userId = existingUser.id;
-          localStorage.setItem('userId', userId);
-          fetchUser();
-          fetchFixtures();
-        } else {
-          console.error('User not found.');
-          alert('User not found. Please sign up.');
-        }
-      }
-    } catch (error) {
-      console.error('Error logging in user:', error);
-    }
-  };
+//         if (existingUser) {
+//           userId = existingUser.id;
+//           localStorage.setItem('userId', userId);
+//           fetchUser();
+//           fetchFixtures();
+//         } else {
+//           console.error('User not found.');
+//           alert('User not found. Please sign up.');
+//         }
+//       }
+//     } catch (error) {
+//       console.error('Error logging in user:', error);
+//     }
+//   };
   
-  const addMoneyToWallet = async () => {
-    const amount = prompt('Enter the amount to add to your wallet:');
-    const parsedAmount = parseInt(amount, 10);
+//   const addMoneyToWallet = async () => {
+//     const amount = prompt('Enter the amount to add to your wallet:');
+//     const parsedAmount = parseInt(amount, 10);
 
-    if (!isNaN(parsedAmount) && parsedAmount > 0) {
-      try {
-        const userId = localStorage.getItem('userId');
+//     if (!isNaN(parsedAmount) && parsedAmount > 0) {
+//       try {
+//         const userId = localStorage.getItem('userId');
 
-        const token = await getAccessTokenSilently();
-        const response = await axios.patch(
-          `https://api.nodecraft.me/users/${userId}/wallet`,
-          { amount: parsedAmount },
-          {
-            headers: {
-              Authorization: `Bearer ${token}`
-            }
-      }
-        );
-        setWalletBalance(response.data.wallet);
-        alert(`Added $${parsedAmount} to your wallet.`);
-      } catch (error) {
-        console.error('Error adding money to wallet:', error);
-        alert('Failed to add money to wallet.');
-      }
-    } else {
-      alert('Invalid amount entered. Please enter a valid integer.');
-    }
-};
+//         const token = await getAccessTokenSilently();
+//         const response = await axios.patch(
+//           `https://api.nodecraft.me/users/${userId}/wallet`,
+//           { amount: parsedAmount },
+//           {
+//             headers: {
+//               Authorization: `Bearer ${token}`
+//             }
+//       }
+//         );
+//         setWalletBalance(response.data.wallet);
+//         alert(`Added $${parsedAmount} to your wallet.`);
+//       } catch (error) {
+//         console.error('Error adding money to wallet:', error);
+//         alert('Failed to add money to wallet.');
+//       }
+//     } else {
+//       alert('Invalid amount entered. Please enter a valid integer.');
+//     }
+// };
 
   const handleBuyBonusClick = (fixture) => {
     if (walletBalance >= 1000) {
@@ -190,7 +199,7 @@ function App() {
             headers: {
               Authorization: `Bearer ${token}`
             }
-      }
+          }
         );
   
         setShowProcessingModal(false);
@@ -215,8 +224,13 @@ function App() {
           try {
             const pdfUrl = await generateInvoice(userData, matchData);
             alert(`Compra exitosa. Descarga tu boleta aquí: ${pdfUrl}. Ubicación: ${response.data.location.city}`);
-            fetchUser();
-            fetchFixtures();
+            const userId = localStorage.getItem('userId');
+            setWalletBalance(await fetchUser(userId, getAccessTokenSilently));
+
+            const uniqueFixtures = await fetchFixtures(getAccessTokenSilently);
+            setFixtures(uniqueFixtures);
+            setFilteredFixtures(uniqueFixtures);
+
           } catch (error) {
             alert('Error generando la boleta.');
           }
@@ -230,33 +244,34 @@ function App() {
     }
   };
 
-  const viewMyBonuses = async () => {
-    const userId = localStorage.getItem('userId');
+
+  // const viewMyBonuses = async () => {
+  //   const userId = localStorage.getItem('userId');
   
-    if (!userId) {
-      alert('No se pudo encontrar el ID del usuario.');
-      return;
-    }
+  //   if (!userId) {
+  //     alert('No se pudo encontrar el ID del usuario.');
+  //     return;
+  //   }
   
-    try {
-      const token = await getAccessTokenSilently();
-      const response = await axios.get(`https://api.nodecraft.me/requests/${userId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
+  //   try {
+  //     const token = await getAccessTokenSilently();
+  //     const response = await axios.get(`https://api.nodecraft.me/requests/${userId}`, {
+  //       headers: {
+  //         Authorization: `Bearer ${token}`
+  //       }
+  //     });
   
-      if (response.data && response.data.requests) {
-        setBonuses(response.data.requests);
-        setShowModal(true);
-      } else {
-        alert('No se encontraron bonuses para este usuario.');
-      }
-    } catch (error) {
-      console.error('Error al obtener los bonuses:', error);
-      alert('Error al obtener los bonuses.');
-    }
-  };
+  //     if (response.data && response.data.requests) {
+  //       setBonuses(response.data.requests);
+  //       setShowModal(true);
+  //     } else {
+  //       alert('No se encontraron bonuses para este usuario.');
+  //     }
+  //   } catch (error) {
+  //     console.error('Error al obtener los bonuses:', error);
+  //     alert('Error al obtener los bonuses.');
+  //   }
+  // };
   
   // eslint-disable-next-line
   useEffect(() => {
@@ -264,9 +279,18 @@ function App() {
       if (isAuthenticated && authAction) {
         try {
           if (authAction === 'signup') {
-            await signUpUser();
+            const newUserId = await signUpUser(user, getAccessTokenSilently);
+            const wallet = await fetchUser(newUserId, getAccessTokenSilently);
+            setWalletBalance(wallet);
+            const uniqueFixtures = await fetchFixtures(getAccessTokenSilently);
+            setFixtures(uniqueFixtures);
+            setFilteredFixtures(uniqueFixtures);
           } else if (authAction === 'login') {
-            await logInUser();
+            const wallet = await logInUser(getAccessTokenSilently, fetchUser);
+            setWalletBalance(wallet);
+            const uniqueFixtures = await fetchFixtures(getAccessTokenSilently);
+            setFixtures(uniqueFixtures);
+            setFilteredFixtures(uniqueFixtures);
           }
         } catch (error) {
           console.error('Error initializing user:', error);
@@ -290,7 +314,7 @@ function App() {
     });
   };
   
-
+  // UseEffect para aplicar los filtros
   useEffect(() => {
     const applyFilters = () => {
       let filtered = fixtures;
@@ -324,6 +348,42 @@ function App() {
 
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
+  // Función para añadir dinero a la wallet
+  const handleAddMoneyToWallet = async () => {
+    const amount = prompt('Enter the amount to add to your wallet:');
+    const parsedAmount = parseInt(amount, 10);
+
+    if (!isNaN(parsedAmount) && parsedAmount > 0) {
+      try {
+        const newBalance = await addMoneyService(parsedAmount, getAccessTokenSilently);
+        setWalletBalance(newBalance);
+        alert(`Added $${parsedAmount} to your wallet.`);
+      } catch (error) {
+        alert('Failed to add money to wallet.');
+      }
+    } else { 
+      alert('Invalid amount entered. Please enter a valid integer.');
+    }
+  };
+
+  // Función para ver mis bonos
+  const handleViewBonuses = async () => {
+    const userId = localStorage.getItem('userId');
+
+    if (!userId) {
+      alert('No se pudo encontrar el ID del usuario.');
+      return;
+    }
+
+    try {
+      const fetchedBonuses = await viewMyBonusesService(userId, getAccessTokenSilently);
+      setBonuses(fetchedBonuses);
+      setShowModal(true);
+    } catch (error) {
+      alert('Error al obtener los bonuses.');
+    }
+  };
+
   return (
     <div className="App">
       <header className="App-header">
@@ -336,10 +396,10 @@ function App() {
             </button>
             <div className="wallet-balance">
               <p>Wallet Balance: ${walletBalance}</p>
-              <button onClick={addMoneyToWallet}>Add Money to Wallet</button>
+              <button onClick={handleAddMoneyToWallet}>Add Money to Wallet</button>
             </div>
             <div className="bonuses-section">
-              <button onClick={viewMyBonuses}>View My Bonuses</button>
+              <button onClick={handleViewBonuses}>View My Bonuses</button>
             </div>
 
             <div className="filters">
@@ -388,16 +448,14 @@ function App() {
                     </div>
                     <div className="fixture-odds">
                       {fixture.odds && fixture.odds.map((odd, index) => (
-                        <>
+                        <div key={index}>
                           <p>{odd.name}: Odd</p>
-                          <div key={index}>
                           {odd.values.map((valueObj, valueIndex) => (
                             <p key={valueIndex}>{valueObj.value}: {valueObj.odd}</p>
                           ))}
                           <div className='text-colored'>Bonos: {fixture.bonos}</div>
                         </div>
-                          </>
-                      ))}
+                        ))}
                     </div>
                     <button onClick={() => handleBuyBonusClick(fixture)}>Buy Bonus</button>
                   </div>
@@ -463,35 +521,35 @@ function App() {
                 <div className="modal-content">
                   <h2 className='text-colored'>Insufficient funds</h2>
                   <p className='text-colored'>Your current balance is not enough to buy the bonus. Please add money to your wallet.</p>
-                  <button onClick={addMoneyToWallet}>Add Money</button>
+                  <button onClick={handleAddMoneyToWallet}>Add Money</button>
                   <button onClick={() => setShowAddMoneyModal(false)}>Close</button>
                 </div>
               </div>
             )}
 
-          {showModal && (
-            <div className="modal">
-              <div className="modal-content">
-                <h2 className='text-colored'>My Bonuses</h2>
-                {bonuses.length > 0 ? (
-                  bonuses.map((bonus, index) => (
-                    <div key={index} className="bonus-item">
-                      <p className='text-colored'>League: {bonus.league_name}</p>
-                      <p className='text-colored'>Round: {bonus.round}</p>
-                      <p className='text-colored'>Date: {new Date(bonus.date).toLocaleDateString()}</p>
-                      <p className='text-colored'>Result: {bonus.result}</p>
-                      <p className='text-colored'>Quantity: {bonus.quantity}</p>
-                      <p className='text-colored'>Processed: {bonus.processed ? 'Yes' : 'No'}</p>
-                      <p className='text-colored'>Odd: {bonus.odd}</p>
-                    </div>
-                  ))
-                ) : (
-                  <p className='text-colored'>No bonuses found.</p>
-                )}
-                <button onClick={() => setShowModal(false)}>Close</button>
+            {showModal && (
+              <div className="modal">
+                <div className="modal-content">
+                  <h2 className='text-colored'>My Bonuses</h2>
+                  {bonuses.length > 0 ? (
+                    bonuses.map((bonus, index) => (
+                      <div key={index} className="bonus-item">
+                        <p className='text-colored'>League: {bonus.league_name}</p>
+                        <p className='text-colored'>Round: {bonus.round}</p>
+                        <p className='text-colored'>Date: {new Date(bonus.date).toLocaleDateString()}</p>
+                        <p className='text-colored'>Result: {bonus.result}</p>
+                        <p className='text-colored'>Quantity: {bonus.quantity}</p>
+                        <p className='text-colored'>Processed: {bonus.processed ? 'Yes' : 'No'}</p>
+                        <p className='text-colored'>Odd: {bonus.odd}</p>
+                      </div>
+                    ))
+                  ) : (
+                    <p className='text-colored'>No bonuses found.</p>
+                  )}
+                  <button onClick={() => setShowModal(false)}>Close</button>
+                </div>
               </div>
-            </div>
-          )}
+            )}
           </>
         ) : (
           <div className="welcome-container">
