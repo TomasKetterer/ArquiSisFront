@@ -113,12 +113,9 @@ export const signUpUser = async (user, getAccessTokenSilently) => {
                     Authorization: `Bearer ${token}`
                 }
             });
-            console.log(response.data.users);
             const users = response.data.users;
-            console.log(user.email);
             const existingUser = users.find(u => u.email === user.email);
             if (existingUser) {
-                console.log(existingUser.id);
                 localStorage.setItem('userId', existingUser.id);
                 if (localStorage.getItem('authAction') === 'signup') {
                     localStorage.removeItem('authAction');
@@ -156,7 +153,6 @@ export const logInUser = async (email, getAccessTokenSilently, fetchUser) => {
                     Authorization: `Bearer ${token}`
                 }
             });
-            console.log(response.data.users);
             const users = response.data.users;
             const existingUser = users.find(user => user.email === email);
             if (existingUser) {

@@ -284,18 +284,14 @@ function App() {
       if (isAuthenticated && authAction) {
         try {
           if (authAction === 'signup') {
-            console.log("Entré en signUpUser");
             const newUserId = await signUpUser(user, getAccessTokenSilently);
-            console.log("aaaa")
             const wallet = await fetchUser(newUserId, getAccessTokenSilently);
             setWalletBalance(wallet);
             const uniqueFixtures = await fetchFixtures(getAccessTokenSilently);
             setFixtures(uniqueFixtures);
             setFilteredFixtures(uniqueFixtures);
           } else if (authAction === 'login') {
-            console.log("Entré en logInUser");
             const wallet = await logInUser(user.email, getAccessTokenSilently, fetchUser);
-            console.log("aaaa")
             setWalletBalance(wallet);
             const uniqueFixtures = await fetchFixtures(getAccessTokenSilently);
             setFixtures(uniqueFixtures);
@@ -312,13 +308,11 @@ function App() {
   }, [isAuthenticated, authAction]);
 
   const handleLogInClick = () => {
-    console.log("Entré en handleLogInClick");
     setAuthAction('login');
     loginWithRedirect();
   };
 
   const handleSignUpClick = () => {
-    console.log("Entré en handleSignUpClick");
     setAuthAction('signup');
     loginWithRedirect({
       screen_hint: 'signup'
@@ -400,8 +394,8 @@ function App() {
     localStorage.removeItem('userId');
 
     // Llamar a la función logout
-    // logout({ returnTo: window.location.origin });
-    logout({ returnTo: 'http://localhost:3000/' }); // debugging
+    logout({ returnTo: window.location.origin });
+    // logout({ returnTo: 'http://localhost:3000/' }); // debugging
 
   };
 
