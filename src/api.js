@@ -7,12 +7,13 @@ const useApi = (endpoint) => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const apiUrl = process.env.REACT_APP_API_URL
 
   useEffect(() => {
     const callApi = async () => {
       try {
         const token = await getAccessTokenSilently({
-          audience: 'https://api.nodecraft.me',
+          audience: `${apiUrl}/`,
         });
 
         const response = await fetch(endpoint, {

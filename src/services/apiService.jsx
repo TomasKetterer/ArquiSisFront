@@ -31,7 +31,8 @@ export const removeDuplicateFixtures = (fixtures) => {
 export const fetchUser = async (userId, getAccessTokenSilently) => {
     try {
         const token = await getAccessTokenSilently();
-        const response = await axios.get(`https://api.nodecraft.me/users/${userId}`, {
+        const apiUrl = process.env.REACT_APP_API_URL;
+        const response = await axios.get(`${apiUrl}/users/${userId}`, {
             headers: {
                 Authorization: `Bearer ${token}`
             }
@@ -51,7 +52,8 @@ export const fetchUser = async (userId, getAccessTokenSilently) => {
 export const fetchFixtures = async (getAccessTokenSilently) => {
     try {
         const token = await getAccessTokenSilently();
-        const response = await axios.get('https://api.nodecraft.me/fixtures', {
+        const apiUrl = process.env.REACT_APP_API_URL;
+        const response = await axios.get(`${apiUrl}/fixtures`, {
             headers: {
                 Authorization: `Bearer ${token}`
             }
@@ -85,8 +87,9 @@ export const signUpUser = async (user, getAccessTokenSilently) => {
     try {
         const token = await getAccessTokenSilently();
         const newUserId = generateLongUserId();
+        const apiUrl = process.env.REACT_APP_API_URL;
 
-        const response = await axios.post('https://api.nodecraft.me/users', {
+        const response = await axios.post(`${apiUrl}/users`, {
             id: newUserId,
             username: user.nickname,
             email: user.email,
@@ -108,7 +111,7 @@ export const signUpUser = async (user, getAccessTokenSilently) => {
         } else {
             console.log('User must be already registered');
             // get the user id from the email
-            const response = await axios.get(`https://api.nodecraft.me/users`, {
+            const response = await axios.get(`${apiUrl}/users`, {
                 headers: {
                     Authorization: `Bearer ${token}`
                 }
@@ -146,9 +149,10 @@ export const logInUser = async (email, getAccessTokenSilently, fetchUser) => {
     try {
         // debo obtener el id del usuario a partir del email
         let userId = localStorage.getItem('userId');
+        const apiUrl = process.env.REACT_APP_API_URL;
         if (!userId) {
             const token = await getAccessTokenSilently();
-            const response = await axios.get(`https://api.nodecraft.me/users`, {
+            const response = await axios.get(`${apiUrl}/users`, {
                 headers: {
                     Authorization: `Bearer ${token}`
                 }
@@ -184,8 +188,9 @@ export const addMoneyToWallet = async (amount, getAccessTokenSilently) => {
     try { 
         const userId = localStorage.getItem('userId');
         const token = await getAccessTokenSilently();
+        const apiUrl = process.env.REACT_APP_API_URL;
         const response = await axios.patch(
-            `https://api.nodecraft.me/users/${userId}/wallet`,
+            `${apiUrl}/users/${userId}/wallet`,
             { amount: amount },
             {
                 headers: {
@@ -210,7 +215,8 @@ export const addMoneyToWallet = async (amount, getAccessTokenSilently) => {
 export const viewMyBonuses = async (userId, getAccessTokenSilently) => {
     try {
         const token = await getAccessTokenSilently();
-        const response = await axios.get(`https://api.nodecraft.me/requests/${userId}`, {
+        const apiUrl = process.env.REACT_APP_API_URL;
+        const response = await axios.get(`${apiUrl}/requests/${userId}`, {
             headers: {
                 Authorization: `Bearer ${token}`,
             },

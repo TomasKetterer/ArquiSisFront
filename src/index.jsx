@@ -2,9 +2,9 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
 import Routing from './Routing.jsx';
-import App from './App.jsx';
 import reportWebVitals from './reportWebVitals.js';
 import { Auth0Provider } from '@auth0/auth0-react';
+
 
 
 const root = ReactDOM.createRoot(document.getElementById('root'));

@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth0 } from '@auth0/auth0-react';
 import { generateInvoice } from './services/invoiceService.js';
+import {useNavigate} from 'react-router-dom';
 import {
   fetchUser,
   fetchFixtures,
@@ -30,146 +31,10 @@ function App() {
   const [authAction, setAuthAction] = useState(() => {
     return localStorage.getItem('authAction') || null;
   });
+  const navigate = useNavigate();
+  const apiUrl = process.env.REACT_APP_API_URL;
 
   const fixturesPerPage = 12;
-
-  // const removeDuplicateFixtures = (fixtures) => {
-  //   const uniqueFixtures = [];
-  //   const fixtureIds = new Set();
-
-  //   for (const fixture of fixtures) {
-  //     if (!fixtureIds.has(fixture.fixture_id)) {
-  //       fixtureIds.add(fixture.fixture_id);
-  //       uniqueFixtures.push(fixture);
-  //     }
-  //   }
-
-  //   return uniqueFixtures;
-  // };
-// eslint-disable-next-line
-  // const fetchUser = async () => {
-  //   try {
-  //     const encodedUserId = localStorage.getItem('userId');
-  //     const token = await getAccessTokenSilently();
-  //     const response = await axios.get(`https://api.nodecraft.me/users/${encodedUserId}`,
-  //       {
-  //         headers: {
-  //           Authorization: `Bearer ${token}`
-  //         }
-  //   });
-  //     setWalletBalance(response.data.wallet);
-  //   } catch (error) {
-  //     console.error('Error fetching wallet balance:', error);
-  //   }
-  // };
-// eslint-disable-next-line
-  // const fetchFixtures = async () => {
-  //   try {
-  //     const token = await getAccessTokenSilently();
-  //     const response = await axios.get('https://api.nodecraft.me/fixtures',
-  //       {
-  //         headers: {
-  //           Authorization: `Bearer ${token}`
-  //         }
-  //   });
-  //     const uniqueFixtures = removeDuplicateFixtures(response.data.data);
-  //     setFixtures(uniqueFixtures);
-  //     setFilteredFixtures(uniqueFixtures);
-  //   } catch (error) {
-  //     console.error('Error fetching fixtures:', error);
-  //   }
-  // };
-
-  // const generateLongUserId = () => {
-  //   const timestamp = Date.now();
-  //   const highPrecision = Math.floor(performance.now() * 1000000);
-  //   const randomPart = Math.floor(Math.random() * 1000000000);
-  //   return `${timestamp}-${highPrecision}-${randomPart}`;
-  // };
-  // eslint-disable-next-line
-  // const signUpUser = async () => {
-  //   try {
-  //     const token = await getAccessTokenSilently();
-  //     const newUserId = generateLongUserId();
-      
-  //     await axios.post('https://api.nodecraft.me/users', {
-  //       id: newUserId,
-  //       username: user.nickname,
-  //       email: user.email,
-  //       password: "Nohaypassword",
-  //       wallet: 0.0
-  //     },
-  //     {
-  //       headers: {
-  //         Authorization: `Bearer ${token}`
-  //       },
-  //     }
-  //     );
-  //     localStorage.setItem('userId', newUserId);
-  //     fetchUser();
-  //     fetchFixtures();
-  //   } catch (error) {
-  //     console.error('Error signing up user:', error);
-  //   }
-  // };
-
-//   const logInUser = async () => {
-//     try {
-//       let userId = localStorage.getItem('userId');
-//       if (!userId) {
-//         const token = await getAccessTokenSilently();
-//         const response = await axios.get('https://api.nodecraft.me/users', {
-//           headers: {
-//             Authorization: `Bearer ${token}`,
-//           },
-//         });
-
-//         const users = response.data.users;
-//         const existingUser = users.find((u) => u.email === user.email);
-
-//         if (existingUser) {
-//           userId = existingUser.id;
-//           localStorage.setItem('userId', userId);
-//           fetchUser();
-//           fetchFixtures();
-//         } else {
-//           console.error('User not found.');
-//           alert('User not found. Please sign up.');
-//         }
-//       }
-//     } catch (error) {
-//       console.error('Error logging in user:', error);
-//     }
-//   };
-  
-//   const addMoneyToWallet = async () => {
-//     const amount = prompt('Enter the amount to add to your wallet:');
-//     const parsedAmount = parseInt(amount, 10);
-
-//     if (!isNaN(parsedAmount) && parsedAmount > 0) {
-//       try {
-//         const userId = localStorage.getItem('userId');
-
-//         const token = await getAccessTokenSilently();
-//         const response = await axios.patch(
-//           `https://api.nodecraft.me/users/${userId}/wallet`,
-//           { amount: parsedAmount },
-//           {
-//             headers: {
-//               Authorization: `Bearer ${token}`
-//             }
-//       }
-//         );
-//         setWalletBalance(response.data.wallet);
-//         alert(`Added $${parsedAmount} to your wallet.`);
-//       } catch (error) {
-//         console.error('Error adding money to wallet:', error);
-//         alert('Failed to add money to wallet.');
-//       }
-//     } else {
-//       alert('Invalid amount entered. Please enter a valid integer.');
-//     }
-// };
 
   const handleBuyBonusClick = (fixture) => {
     if (walletBalance >= 1000) {
@@ -183,97 +48,86 @@ function App() {
   const buyBonus = async (fixture, result, quantity) => {
     const cost = 1000 * quantity;
     const encodedUserId = localStorage.getItem('userId');
+
+    if (!encodedUserId) {
+      alert('Usuario no encontrado.');
+      return;
+    }
   
-    if (walletBalance >= cost && fixture.bonos >= quantity) {
-      setShowBuyModal(false);
-      setShowProcessingModal(true);
-  
-      try {
-        const token = await getAccessTokenSilently();
-        const response = await axios.post(
-          `https://api.nodecraft.me/fixtures/${fixture.fixture_id}/compra`, 
-          { 
-            userId: encodedUserId, 
-            result: result, 
-            quantity: quantity
-          },
-          {
-            headers: {
-              Authorization: `Bearer ${token}`
-            }
+    try {
+      const token = await getAccessTokenSilently();
+      console.log("mira tu")
+      const response = await axios.post(
+        `${apiUrl}/fixtures/${fixture.fixture_id}/compra`, 
+        { 
+          userId: encodedUserId, 
+          result: result, 
+          quantity: quantity
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
           }
-        );
-  
-        setShowProcessingModal(false);
-  
+        }
+      )
+
+      // del post me debería llegar un message: "Compra iniciada con éxito", un url y un token
+      console.log("obtuvimos el token")
+      console.log("url:", response.data.url)
+      console.log('token:', response.data.token)
+
+      if (response.data.url && response.data.token) { 
+        navigate('/confirm-purchase', {
+          state: {
+            url: response.data.url,
+            token: response.data.token,
+            amount: quantity,
+            fixture: fixture,
+            result: result,
+            locationInfo: response.data.location,
+            request_id: response.data.request_id
+          }
+        });
+
         if (response.data.error) {
           alert(response.data.error);
         } else {
-
+  
           // Agregado generación de boleta post compra
           const userData = {
             name: user.nickname,
             email: user.email
           };
-
+  
           const matchData = {
             teams: fixture.teams,
             date: fixture.date,
             amount: cost  // El valor depende de la cantidad
           };
-
+  
           // Se genera el URL de la boleta y además se informa la ubicación
           try {
             const pdfUrl = await generateInvoice(userData, matchData);
             alert(`Compra exitosa. Descarga tu boleta aquí: ${pdfUrl}. Ubicación: ${response.data.location.city}`);
             const userId = localStorage.getItem('userId');
             setWalletBalance(await fetchUser(userId, getAccessTokenSilently));
-
+  
             const uniqueFixtures = await fetchFixtures(getAccessTokenSilently);
             setFixtures(uniqueFixtures);
             setFilteredFixtures(uniqueFixtures);
-
+  
           } catch (error) {
             alert('Error generando la boleta.');
           }
         }
-      } catch (error) {
-        setShowProcessingModal(false);
-        alert('Hubo un error al procesar la compra.');
+      } else {
+        alert('Error al iniciar la transacción.');
       }
-    } else {
-      alert('Fondos insuficientes o bonos no disponibles.');
+    } catch (error) {
+      console.error('Error al realizar la compra:', error);
+      alert('Hubo un error al procesar la compra.');
     }
   };
-
-
-  // const viewMyBonuses = async () => {
-  //   const userId = localStorage.getItem('userId');
-  
-  //   if (!userId) {
-  //     alert('No se pudo encontrar el ID del usuario.');
-  //     return;
-  //   }
-  
-  //   try {
-  //     const token = await getAccessTokenSilently();
-  //     const response = await axios.get(`https://api.nodecraft.me/requests/${userId}`, {
-  //       headers: {
-  //         Authorization: `Bearer ${token}`
-  //       }
-  //     });
-  
-  //     if (response.data && response.data.requests) {
-  //       setBonuses(response.data.requests);
-  //       setShowModal(true);
-  //     } else {
-  //       alert('No se encontraron bonuses para este usuario.');
-  //     }
-  //   } catch (error) {
-  //     console.error('Error al obtener los bonuses:', error);
-  //     alert('Error al obtener los bonuses.');
-  //   }
-  // };
   
   // eslint-disable-next-line
   useEffect(() => {
@@ -405,7 +259,7 @@ function App() {
         {isAuthenticated ? (
           <>
             <img src={user.picture} alt={user.name} className="App-logo" />
-            <p>Welcome, {user.name} con mail {user.email}</p>
+            <p>Welcome, {user.name} con mail {user.email} api url {apiUrl}</p>
             <button onClick={handleLogout}>
               Log Out
             </button>
