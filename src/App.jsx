@@ -92,33 +92,35 @@ function App() {
         if (response.data.error) {
           alert(response.data.error);
         } else {
+
+          console.log
   
-          // Agregado generación de boleta post compra
-          const userData = {
-            name: user.nickname,
-            email: user.email
-          };
+          // // Agregado generación de boleta post compra
+          // const userData = {
+          //   name: user.nickname,
+          //   email: user.email
+          // };
   
-          const matchData = {
-            teams: fixture.teams,
-            date: fixture.date,
-            amount: cost  // El valor depende de la cantidad
-          };
+          // const matchData = {
+          //   teams: fixture.teams,
+          //   date: fixture.date,
+          //   amount: cost  // El valor depende de la cantidad
+          // };
   
-          // Se genera el URL de la boleta y además se informa la ubicación
-          try {
-            const pdfUrl = await generateInvoice(userData, matchData);
-            alert(`Compra exitosa. Descarga tu boleta aquí: ${pdfUrl}. Ubicación: ${response.data.location.city}`);
-            const userId = localStorage.getItem('userId');
-            setWalletBalance(await fetchUser(userId, getAccessTokenSilently));
+          // // Se genera el URL de la boleta y además se informa la ubicación
+          // try {
+          //   const pdfUrl = await generateInvoice(userData, matchData);
+          //   alert(`Compra exitosa. Descarga tu boleta aquí: ${pdfUrl}. Ubicación: ${response.data.location.city}`);
+          //   const userId = localStorage.getItem('userId');
+          //   setWalletBalance(await fetchUser(userId, getAccessTokenSilently));
   
-            const uniqueFixtures = await fetchFixtures(getAccessTokenSilently);
-            setFixtures(uniqueFixtures);
-            setFilteredFixtures(uniqueFixtures);
+          //   const uniqueFixtures = await fetchFixtures(getAccessTokenSilently);
+          //   setFixtures(uniqueFixtures);
+          //   setFilteredFixtures(uniqueFixtures);
   
-          } catch (error) {
-            alert('Error generando la boleta.');
-          }
+          // } catch (error) {
+          //   alert('Error generando la boleta.');
+          // }
         }
       } else {
         alert('Error al iniciar la transacción.');

@@ -3,6 +3,8 @@ import React, { useEffect, useState, useRef } from 'react';
 import './PurchaseCompleted.css'; // Puedes crear un CSS específico para esta página
 import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { generateInvoice } from '../services/invoiceService';
+import { useAuth0 } from '@auth0/auth0-react';
 
 const PurchaseCompleted = () => {
   const [statusMessage, setStatusMessage] = useState('Validando tu compra...');
@@ -13,6 +15,7 @@ const PurchaseCompleted = () => {
 
   const location = useLocation();
   const navigate = useNavigate();
+  const { user } = useAuth0(); // Obtén la información del usuario autenticado
 
   useEffect(() => {
     const confirmTransaction = async () => {
@@ -36,7 +39,7 @@ const PurchaseCompleted = () => {
       try {
         const apiUrl = process.env.REACT_APP_API_URL;
 
-        // get fixture id from local storage
+        // get request_id from local storage
         const request_id = localStorage.getItem('request_id');
         localStorage.removeItem('request_id');
         console.log('request_id:', request_id);
@@ -52,6 +55,21 @@ const PurchaseCompleted = () => {
         if (response.data.status === 'AUTHORIZED') {
           setStatusMessage('¡Compra realizada con éxito!');
           setIsSuccess(true);
+
+          // Datos para la boleta desde la respuesta del backend
+          const userData = response.data.user;
+          const matchData = response.data.match;
+
+          console.log('userData:', userData);
+          console.log('matchData:', matchData);
+
+          try {
+            const pdfUrl = await generateInvoice(userData, matchData);
+            alert(`Compra exitosa. Descarga tu boleta aquí: ${pdfUrl}.`);
+          } catch (error) {
+            console.error('Error generando la boleta:', error);
+            alert('Error generando la boleta.');
+          }
         } else {
           setStatusMessage('La compra no pudo ser completada.');
           setIsSuccess(false);
