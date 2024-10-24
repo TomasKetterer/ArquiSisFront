@@ -5,6 +5,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import App from './App.jsx';
 import ConfirmPurchase from './components/ConfirmPurchase.jsx';
 import PurchaseCompleted from './components/PurchaseCompleted.jsx';
+import MyRequests from './components/MyRequests.jsx';
 
 function Routing () {
     return (
@@ -13,6 +14,7 @@ function Routing () {
                 <Route path="/" element={<App />} />
                 <Route path="/confirm-purchase" element={<ConfirmPurchase />} />
                 <Route path="/purchase-completed" element={<PurchaseCompleted />} />
+                <Route path="/my-requests" element={<MyRequests />} />
             </Routes>
         </BrowserRouter>
     )

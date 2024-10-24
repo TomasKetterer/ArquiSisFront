@@ -2,8 +2,7 @@ import './App.css';
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth0 } from '@auth0/auth0-react';
-import { generateInvoice } from './services/invoiceService.js';
-import {useNavigate} from 'react-router-dom';
+import {redirect, useNavigate} from 'react-router-dom';
 import {
   fetchUser,
   fetchFixtures,
@@ -46,7 +45,6 @@ function App() {
   };
 
   const buyBonus = async (fixture, result, quantity) => {
-    const cost = 1000 * quantity;
     const encodedUserId = localStorage.getItem('userId');
 
     if (!encodedUserId) {
@@ -93,7 +91,7 @@ function App() {
           alert(response.data.error);
         } else {
 
-          console.log
+          console.log('hola')
   
           // // Agregado generación de boleta post compra
           // const userData = {
@@ -250,10 +248,14 @@ function App() {
     localStorage.removeItem('userId');
 
     // Llamar a la función logout
-    logout({ returnTo: window.location.origin });
-    // logout({ returnTo: 'http://localhost:3000/' }); // debugging
+    // logout({ returnTo: window.location.origin });
+    logout({ returnTo: 'http://localhost:3000/' }); // debugging
 
   };
+
+  const redirectToMyRequests = () => {
+    navigate('/my-requests');
+  }
 
   return (
     <div className="App">
@@ -270,7 +272,7 @@ function App() {
               <button onClick={handleAddMoneyToWallet}>Add Money to Wallet</button>
             </div>
             <div className="bonuses-section">
-              <button onClick={handleViewBonuses}>View My Bonuses</button>
+              <button onClick={redirectToMyRequests}>My Requests</button>
             </div>
 
             <div className="filters">

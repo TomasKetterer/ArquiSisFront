@@ -1,0 +1,110 @@
+/* MyRequests.css */
+
+/* Aplicar el fondo al contenedor principal */
+.MyRequests {
+    background: linear-gradient(to right, #1e3c72, #2a5298);
+    min-height: 100vh;
+    padding: 20px;
+  }
+  
+  /* Contenedor interno para el contenido */
+  .my-requests {
+    max-width: 1200px;
+    margin: 0 auto;
+    color: #fff; /* Color de texto blanco para mejor contraste */
+  }
+  
+  .my-requests h2 {
+    text-align: center;
+    margin-bottom: 20px;
+    color: #ffffff;
+  }
+  
+  .filter-options {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 20px;
+  }
+  
+  .filter-options label {
+    margin-right: 10px;
+    font-weight: bold;
+    color: #ffffff;
+  }
+  
+  .filter-options select {
+    padding: 5px;
+    font-size: 16px;
+  }
+  
+  .requests-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  
+  .requests-table th,
+  .requests-table td {
+    border: 1px solid #ddd;
+    padding: 8px;
+  }
+  
+  .requests-table th {
+    background-color: #2a5298; /* Color de fondo para los encabezados */
+    text-align: left;
+    color: #ffffff;
+  }
+  
+  .requests-table tr:nth-child(even) {
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+  
+  .requests-table tr:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+  }
+  
+  .requests-table td {
+    color: #ffffff;
+  }
+  
+  .requests-table td:last-child {
+    font-weight: bold;
+  }
+  
+  .requests-table p {
+    text-align: center;
+    font-size: 18px;
+    color: #ffffff;
+  }
+  
+  /* Estilos para el botón de volver al inicio */
+  .back-button {
+    margin-top: 20px;
+    background-color: #007bff;
+    color: white;
+    padding: 12px 30px;
+    font-size: 18px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.3s ease-in-out, transform 0.3s ease-in-out;
+  }
+  
+  .back-button:hover {
+    background-color: #0056b3;
+    transform: scale(1.05);
+  }
+  
+
+  .invoice-button {
+    background-color: #28a745; /* Verde */
+    color: white;
+    padding: 8px 12px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin: 0;
+  }
+
+  .invoice-button:hover {
+    background-color: #218838;
+  }
