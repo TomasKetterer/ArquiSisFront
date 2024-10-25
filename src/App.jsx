@@ -115,7 +115,8 @@ function App() {
               }
             });
             const users = response.data.users;
-            const existingUser = users.find(user => user.email === user.email);
+            const existingUser = users.find(u => u.email === user.email);
+            console.log("existingUser", existingUser)
             if (existingUser) {
               userId = existingUser.id;
               localStorage.setItem('userId', userId);
