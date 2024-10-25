@@ -70,7 +70,7 @@ const MyRequests = () => {
       const token = await getAccessTokenSilently();
 
       // Obtener datos necesarios para generar la boleta
-      const response = await axios.get(`${apiUrl}/requests/${requestId}`, {
+      const response = await axios.get(`${apiUrl}/requestsbyid/${requestId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -119,7 +119,7 @@ const MyRequests = () => {
                 <th>Fecha</th>
                 <th>Resultado</th>
                 <th>Cantidad</th>
-                <th>Procesado</th>
+                <th>¿Has acertado?</th>
                 <th>Odd</th>
                 <th>Estado</th>
               </tr>
@@ -143,7 +143,7 @@ const MyRequests = () => {
                   {req.valid === true && (
                     <button
                       className="invoice-button"
-                      onClick={() => handleDownloadInvoice(req.id)}
+                      onClick={() => handleDownloadInvoice(req.request_id)}
                     >
                       Descargar Boleta
                     </button>

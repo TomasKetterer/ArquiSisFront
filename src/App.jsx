@@ -89,36 +89,6 @@ function App() {
 
         if (response.data.error) {
           alert(response.data.error);
-        } else {
-
-          console.log('hola')
-  
-          // // Agregado generación de boleta post compra
-          // const userData = {
-          //   name: user.nickname,
-          //   email: user.email
-          // };
-  
-          // const matchData = {
-          //   teams: fixture.teams,
-          //   date: fixture.date,
-          //   amount: cost  // El valor depende de la cantidad
-          // };
-  
-          // // Se genera el URL de la boleta y además se informa la ubicación
-          // try {
-          //   const pdfUrl = await generateInvoice(userData, matchData);
-          //   alert(`Compra exitosa. Descarga tu boleta aquí: ${pdfUrl}. Ubicación: ${response.data.location.city}`);
-          //   const userId = localStorage.getItem('userId');
-          //   setWalletBalance(await fetchUser(userId, getAccessTokenSilently));
-  
-          //   const uniqueFixtures = await fetchFixtures(getAccessTokenSilently);
-          //   setFixtures(uniqueFixtures);
-          //   setFilteredFixtures(uniqueFixtures);
-  
-          // } catch (error) {
-          //   alert('Error generando la boleta.');
-          // }
         }
       } else {
         alert('Error al iniciar la transacción.');
@@ -132,25 +102,33 @@ function App() {
   // eslint-disable-next-line
   useEffect(() => {
     const initializeUser = async () => {
-      if (authAction !== null) {
-        localStorage.setItem('authAction', authAction);
-      }
-      if (isAuthenticated && authAction) {
+      if (isAuthenticated) {
         try {
-          if (authAction === 'signup') {
-            const newUserId = await signUpUser(user, getAccessTokenSilently);
-            const wallet = await fetchUser(newUserId, getAccessTokenSilently);
-            setWalletBalance(wallet);
-            const uniqueFixtures = await fetchFixtures(getAccessTokenSilently);
-            setFixtures(uniqueFixtures);
-            setFilteredFixtures(uniqueFixtures);
-          } else if (authAction === 'login') {
-            const wallet = await logInUser(user.email, getAccessTokenSilently, fetchUser);
-            setWalletBalance(wallet);
-            const uniqueFixtures = await fetchFixtures(getAccessTokenSilently);
-            setFixtures(uniqueFixtures);
-            setFilteredFixtures(uniqueFixtures);
+          let userId = localStorage.getItem('userId');
+          if (!userId) {
+            // Si no hay userId en el localStorage, buscarlo del backend
+            const token = await getAccessTokenSilently();
+            const apiUrl = process.env.REACT_APP_API_URL;
+            const response = await axios.get(`${apiUrl}/users`, {
+              headers: {
+                Authorization: `Bearer ${token}`
+              }
+            });
+            const users = response.data.users;
+            const existingUser = users.find(user => user.email === user.email);
+            if (existingUser) {
+              userId = existingUser.id;
+              localStorage.setItem('userId', userId);
+            } else {
+              // Si el usuario no existe en la base de datos, crearlo
+              userId = await signUpUser(user, getAccessTokenSilently);
+            }
           }
+          const wallet = await fetchUser(userId, getAccessTokenSilently);
+          setWalletBalance(wallet);
+          const uniqueFixtures = await fetchFixtures(getAccessTokenSilently);
+          setFixtures(uniqueFixtures);
+          setFilteredFixtures(uniqueFixtures);
         } catch (error) {
           console.error('Error initializing user:', error);
         }
@@ -248,8 +226,8 @@ function App() {
     localStorage.removeItem('userId');
 
     // Llamar a la función logout
-    // logout({ returnTo: window.location.origin });
-    logout({ returnTo: 'http://localhost:3000/' }); // debugging
+    logout({ returnTo: window.location.origin });
+    // logout({ returnTo: 'http://localhost:3000/' }); // debugging
 
   };
 
@@ -257,13 +235,15 @@ function App() {
     navigate('/my-requests');
   }
 
+  console.log("isAuthenticated", isAuthenticated)
+
   return (
     <div className="App">
       <header className="App-header">
         {isAuthenticated ? (
           <>
             <img src={user.picture} alt={user.name} className="App-logo" />
-            <p>Welcome, {user.name} con mail {user.email} api url {apiUrl}</p>
+            <p>Welcome, {user.name}</p>
             <button onClick={handleLogout}>
               Log Out
             </button>

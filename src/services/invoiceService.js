@@ -2,8 +2,11 @@ import axios from 'axios';
 
 export const generateInvoice = async (userData, matchData) => {
   try {
+    console.log(userData)
+    console.log(matchData)
 
-    const response = await axios.post('https://axp8mrrbk1.execute-api.us-east-1.amazonaws.com/generate', {
+    // const response = await axios.post('https://axp8mrrbk1.execute-api.us-east-1.amazonaws.com/generate', {
+    const response = await axios.post('https://cy9d01jjhi.execute-api.us-east-1.amazonaws.com/generate', {
       userData: {
         name: userData.name,
         email: userData.email

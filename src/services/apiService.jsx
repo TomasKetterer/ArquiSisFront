@@ -104,10 +104,7 @@ export const signUpUser = async (user, getAccessTokenSilently) => {
         );
         if (response.status === 201) {
             localStorage.setItem('userId', newUserId);
-            if (localStorage.getItem('authAction') === 'signup') {
-                localStorage.removeItem('authAction');
-                return newUserId;
-            }
+            return newUserId;
         } else {
             console.log('User must be already registered');
             // get the user id from the email
@@ -120,10 +117,7 @@ export const signUpUser = async (user, getAccessTokenSilently) => {
             const existingUser = users.find(u => u.email === user.email);
             if (existingUser) {
                 localStorage.setItem('userId', existingUser.id);
-                if (localStorage.getItem('authAction') === 'signup') {
-                    localStorage.removeItem('authAction');
-                    return existingUser.id;
-                }
+                return existingUser.id;
             } else {
                 throw new Error('No user found with this email.');
             }
@@ -224,7 +218,7 @@ export const viewMyBonuses = async (userId, getAccessTokenSilently) => {
         if (response.data && response.data.bonuses) {
             return response.data.bonuses;
         } else {
-            throw new Error('No bonuses found for this user.');
+            throw new Error('No bonuses found for this user.'); 
         }
     } catch (error) {
         console.error('Error viewing bonuses:', error);
