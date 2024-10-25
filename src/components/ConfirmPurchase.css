@@ -1,0 +1,139 @@
+/* ConfirmPurchase.css */
+.ConfirmPurchase {
+    text-align: center;
+    background: linear-gradient(to right, #1e3c72, #2a5298);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    padding: 20px;
+}
+
+.confirm-purchase-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(42, 82, 152, 0.9); /* Transparencia para mejor legibilidad */
+    padding: 30px;
+    margin: 50px auto;
+    max-width: 600px;
+    border-radius: 12px;
+    box-shadow: 0px 6px 12px rgba(0, 0, 0, 0.3);
+}
+
+.confirm-purchase-container h2 {
+    color: #ffffff; /* Blanco para mejor contraste */
+    margin-bottom: 20px;
+    font-size: 28px;
+}
+
+.fixture-details {
+    width: 100%;
+    text-align: center;
+}
+
+.teams {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 20px;
+    position: relative; /* Para posicionamiento relativo del "VS" */
+}
+
+.team {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 0 20px;
+    width: 100px; /* Ancho fijo para simetría */
+}
+
+.team img {
+    width: 80px;
+    height: 80px;
+    margin-bottom: 10px;
+    border-radius: 50%;
+    border: 2px solid #ffffff;
+    object-fit: contain; /* Asegura que las imágenes se ajusten dentro del contenedor */
+}
+
+.team span {
+    font-size: 18px;
+    font-weight: bold;
+    color: #ffffff; /* Blanco para mejor contraste */
+}
+
+.vs {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 24px;
+    font-weight: bold;
+    color: #ffffff; /* Blanco para consistencia */
+    background-color: rgba(255, 255, 255, 0); /* Fondo semitransparente para mejor legibilidad */
+    padding: 5px 10px;
+    border-radius: 5px;
+}
+
+.fixture-info p,
+.purchase-info p {
+    font-size: 16px;
+    color: #ffffff; /* Blanco para mejor contraste */
+    margin: 5px 0;
+}
+
+.payment-form {
+    margin-top: 30px;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+}
+
+.pay-button {
+    background-color: #98b0d5; /* Azul claro para visibilidad */
+    color: #1c2128; /* Texto en color azul oscuro para contraste */
+    padding: 12px 30px;
+    font-weight: bold;
+    font-size: 18px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.3s, transform 0.3s;
+}
+
+.pay-button:hover {
+    background-color: #98b0d5; /* Azul más claro al pasar el cursor */
+    transform: scale(1.05); /* Efecto de aumento al pasar el cursor */
+}
+
+/* Media Query para Pantallas Pequeñas */
+@media (max-width: 600px) {
+    .teams {
+        flex-direction: column;
+    }
+
+    .vs {
+        position: static;
+        transform: none;
+        margin: 10px 0;
+    }
+
+    .team {
+        margin: 10px 0;
+        width: auto;
+    }
+
+    .confirm-purchase-container {
+        padding: 20px;
+        margin: 20px auto;
+        max-width: 90%;
+    }
+
+    .pay-button {
+        width: 100%;
+        padding: 12px 0;
+    }
+}
