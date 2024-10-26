@@ -44,10 +44,14 @@ const PurchaseCompleted = () => {
         localStorage.removeItem('request_id');
         console.log('request_id:', request_id);
 
+        const sendEmail = localStorage.getItem('sendEmailOnSuccess');
+        localStorage.removeItem('sendEmailOnSuccess');
+
         // data to send to the server
         const data = {
           token_ws,
           request_id,
+          sendEmail,
         };
 
         const response = await axios.post(`${apiUrl}/transactions/commit`, data);
