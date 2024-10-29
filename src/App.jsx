@@ -36,7 +36,7 @@ function App() {
   const apiUrl = process.env.REACT_APP_API_URL;
 
   const [workerAvailable, setWorkerAvailable] = useState(false);
-
+  const [recommendation, setRecommendation] = useState(null);
   const fixturesPerPage = 12;
 
   const handleBuyBonusClick = (fixture) => {
@@ -239,15 +239,16 @@ function App() {
     let userId = localStorage.getItem('userId');
     const result = await madeRecommendations(userId);
     console.log(result);
-  };
-
-  const handleShowResultsClick = () => {
-    // Code to show results
+    setRecommendation(data); 
   };
 
   return (
     <div className="App">
-      <header className="App-header"></header>
+      <header className="App-header">
+        {isAuthenticated ? (
+          <>
+            <img src={user.picture} alt={user.name} className="App-logo" />
+            <p>Welcome, {user.name}</p>
             <button onClick={handleLogout}>
               Log Out
             </button>
@@ -265,6 +266,12 @@ function App() {
 
             <div>
               <button onClick={() => makeRecommendations()}>View Recommendation</button>
+              {recommendation && (
+                <div>
+                  <h3>Recommendation:</h3>
+                  <pre>{JSON.stringify(recommendation, null, 2)}</pre>
+                </div>
+              )}
             </div>
 
             <div className="filters">
