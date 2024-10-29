@@ -4,18 +4,16 @@ import './PurchaseCompleted.css'; // Puedes crear un CSS específico para esta p
 import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { generateInvoice } from '../services/invoiceService';
-import { useAuth0 } from '@auth0/auth0-react';
 
 const PurchaseCompleted = () => {
   const [statusMessage, setStatusMessage] = useState('Validando tu compra...');
   const [isSuccess, setIsSuccess] = useState(null);
   const [isAborted, setIsAborted] = useState(false);
-  const [setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
   const hasConfirmed = useRef(false);
 
   const location = useLocation();
   const navigate = useNavigate();
-  // const { user } = useAuth0(); // Obtén la información del usuario autenticado
 
   useEffect(() => {
     const confirmTransaction = async () => {
@@ -39,6 +37,9 @@ const PurchaseCompleted = () => {
       try {
         const apiUrl = process.env.REACT_APP_API_URL;
 
+        if (isLoading) {
+          console.log('');
+        }
         // get request_id from local storage
         const request_id = localStorage.getItem('request_id');
         localStorage.removeItem('request_id');

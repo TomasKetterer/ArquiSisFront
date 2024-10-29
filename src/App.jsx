@@ -7,8 +7,7 @@ import {
   fetchUser,
   fetchFixtures,
   signUpUser,
-  addMoneyToWallet as addMoneyService,
-  viewMyBonuses as viewMyBonusesService,
+  addMoneyToWallet as addMoneyService
 } from './services/apiService.jsx';
 
 function App() {
@@ -18,7 +17,7 @@ function App() {
   const [currentPage, setCurrentPage] = useState(1);
   const [filters, setFilters] = useState({ home: '', away: '', date: '' });
   const [walletBalance, setWalletBalance] = useState(0);
-  const [bonuses, setBonuses] = useState([]);
+  const [bonuses] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [showBuyModal, setShowBuyModal] = useState(false); 
   const [showProcessingModal, setShowProcessingModal] = useState(false);
@@ -202,24 +201,6 @@ function App() {
       alert('Invalid amount entered. Please enter a valid integer.');
     }
   };
-
-  // Función para ver mis bonos
-  // const handleViewBonuses = async () => {
-  //   const userId = localStorage.getItem('userId');
-
-  //   if (!userId) {
-  //     alert('No se pudo encontrar el ID del usuario.');
-  //     return;
-  //   }
-
-  //   try {
-  //     const fetchedBonuses = await viewMyBonusesService(userId, getAccessTokenSilently);
-  //     setBonuses(fetchedBonuses);
-  //     setShowModal(true);
-  //   } catch (error) {
-  //     alert('Error al obtener los bonuses.');
-  //   }
-  // };
 
   const handleLogout = () => {
     // Eliminar userId del localStorage
