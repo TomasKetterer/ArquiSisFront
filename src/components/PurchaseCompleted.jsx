@@ -93,7 +93,7 @@ const PurchaseCompleted = () => {
     };
 
     confirmTransaction();
-  }, [location, setIsLoading]);
+  }, [location, isLoading]);
 
   const handleGoBack = () => {
     navigate('/'); // Navega a la página de inicio
