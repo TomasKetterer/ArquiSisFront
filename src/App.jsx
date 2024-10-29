@@ -10,6 +10,10 @@ import {
   addMoneyToWallet as addMoneyService
 } from './services/apiService.jsx';
 
+import { 
+  madeRecommendations
+} from './workers-functions.js';
+
 function App() {
   const { loginWithRedirect, logout, isAuthenticated, user, getAccessTokenSilently } = useAuth0();
   const [fixtures, setFixtures] = useState([]);
@@ -231,13 +235,19 @@ function App() {
     }
   };
 
+  const makeRecommendations = async () => {
+    let userId = localStorage.getItem('userId');
+    const result = await madeRecommendations(userId);
+    console.log(result);
+  };
+
+  const handleShowResultsClick = () => {
+    // Code to show results
+  };
+
   return (
     <div className="App">
-      <header className="App-header">
-        {isAuthenticated ? (
-          <>
-            <img src={user.picture} alt={user.name} className="App-logo" />
-            <p>Welcome, {user.name}</p>
+      <header className="App-header"></header>
             <button onClick={handleLogout}>
               Log Out
             </button>
@@ -251,6 +261,10 @@ function App() {
 
             <div className="worker-status">
               <p>Worker Status: {workerAvailable ? 'Available' : 'Unavailable'}</p>
+            </div>
+
+            <div>
+              <button onClick={() => makeRecommendations()}>View Recommendation</button>
             </div>
 
             <div className="filters">
