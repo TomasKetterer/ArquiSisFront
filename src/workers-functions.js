@@ -25,6 +25,11 @@ async function Recommendations(data) {
     return responses;
 }
 
+//async function getHistory(id) {
+//    const response = await axios.get(`https://nodecraft.me/recommendations/${id}/history`);
+//    const filteredData = response.data.filter(item => item.response != {});
+//    return filteredData;
+//}
 
 async function madeRecommendations(id) {
     const job = await postRecomendations(id);
