@@ -28,7 +28,6 @@ async function Recommendations(data) {
 async function getHistory(id) {
     const response = await axios.get(`https://nodecraft.me/recommendations/${id}/history`);
     const filteredData = response.data.filter(item => item.response != {});
-    console.log(filteredData);
     return filteredData;
 }
 
@@ -39,12 +38,6 @@ async function madeRecommendations(id) {
     return result;
 }
 
-
-//console.log(await Recommendations(fixtures));
-
-
-
 export {
-    getHistory,
     madeRecommendations
 };
