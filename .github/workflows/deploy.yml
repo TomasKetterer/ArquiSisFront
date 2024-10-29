@@ -19,6 +19,13 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '18.18.0'
+          
+      - name: Create .env file
+        run: |
+          echo "REACT_APP_AUTH0_DOMAIN=${{ secrets.REACT_APP_AUTH0_DOMAIN }}" >> .env
+          echo "REACT_APP_AUTH0_CLIENT_ID=${{ secrets.REACT_APP_AUTH0_CLIENT_ID }}" >> .env
+          echo "REACT_APP_API_URL=${{ secrets.REACT_APP_API_URL }}" >> .env
+          echo "FRONTEND_URL=${{ secrets.FRONTEND_URL }}" >> .env
 
       - name: Install dependencies and build project
         run: |
