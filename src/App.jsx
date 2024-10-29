@@ -2,12 +2,11 @@ import './App.css';
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth0 } from '@auth0/auth0-react';
-import {redirect, useNavigate} from 'react-router-dom';
+import {useNavigate} from 'react-router-dom';
 import {
   fetchUser,
   fetchFixtures,
   signUpUser,
-  logInUser,
   addMoneyToWallet as addMoneyService,
   viewMyBonuses as viewMyBonusesService,
 } from './services/apiService.jsx';
@@ -205,22 +204,22 @@ function App() {
   };
 
   // Función para ver mis bonos
-  const handleViewBonuses = async () => {
-    const userId = localStorage.getItem('userId');
+  // const handleViewBonuses = async () => {
+  //   const userId = localStorage.getItem('userId');
 
-    if (!userId) {
-      alert('No se pudo encontrar el ID del usuario.');
-      return;
-    }
+  //   if (!userId) {
+  //     alert('No se pudo encontrar el ID del usuario.');
+  //     return;
+  //   }
 
-    try {
-      const fetchedBonuses = await viewMyBonusesService(userId, getAccessTokenSilently);
-      setBonuses(fetchedBonuses);
-      setShowModal(true);
-    } catch (error) {
-      alert('Error al obtener los bonuses.');
-    }
-  };
+  //   try {
+  //     const fetchedBonuses = await viewMyBonusesService(userId, getAccessTokenSilently);
+  //     setBonuses(fetchedBonuses);
+  //     setShowModal(true);
+  //   } catch (error) {
+  //     alert('Error al obtener los bonuses.');
+  //   }
+  // };
 
   const handleLogout = () => {
     // Eliminar userId del localStorage

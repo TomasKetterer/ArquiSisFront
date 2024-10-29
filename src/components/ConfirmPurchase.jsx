@@ -12,7 +12,7 @@ const ConfirmPurchase = () => {
     return <p className="text-colored">No hay datos de compra disponibles.</p>;
   }
 
-  const { fixture, amount, result, url, token, locationInfo, request_id} = data;
+  const { fixture, amount, result, url, token, request_id} = data;
 
   //Set fixture id in local storage
   localStorage.setItem('request_id', request_id);

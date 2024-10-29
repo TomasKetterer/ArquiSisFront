@@ -10,12 +10,12 @@ const PurchaseCompleted = () => {
   const [statusMessage, setStatusMessage] = useState('Validando tu compra...');
   const [isSuccess, setIsSuccess] = useState(null);
   const [isAborted, setIsAborted] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [setIsLoading] = useState(true);
   const hasConfirmed = useRef(false);
 
   const location = useLocation();
   const navigate = useNavigate();
-  const { user } = useAuth0(); // Obtén la información del usuario autenticado
+  // const { user } = useAuth0(); // Obtén la información del usuario autenticado
 
   useEffect(() => {
     const confirmTransaction = async () => {
