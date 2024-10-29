@@ -239,7 +239,7 @@ function App() {
     let userId = localStorage.getItem('userId');
     const result = await madeRecommendations(userId);
     console.log(result);
-    setRecommendation(data); 
+    setRecommendation(result); 
   };
 
   return (
