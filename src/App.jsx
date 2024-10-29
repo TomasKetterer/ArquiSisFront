@@ -2,15 +2,6 @@ import './App.css';
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth0 } from '@auth0/auth0-react';
-import { generateInvoice } from './services/invoiceService.js';
-import {
-  fetchUser,
-  fetchFixtures,
-  signUpUser,
-  logInUser,
-  addMoneyToWallet as addMoneyService,
-  viewMyBonuses as viewMyBonusesService,
-} from './services/apiService.jsx';
 
 function App() {
   const { loginWithRedirect, logout, isAuthenticated, user, getAccessTokenSilently } = useAuth0();
@@ -22,154 +13,115 @@ function App() {
   const [bonuses, setBonuses] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [showBuyModal, setShowBuyModal] = useState(false); 
-  const [showProcessingModal, setShowProcessingModal] = useState(false);
   const [selectedFixture, setSelectedFixture] = useState(null);
   const [result, setResult] = useState('home');
   const [quantity, setQuantity] = useState(1);
   const [showAddMoneyModal, setShowAddMoneyModal] = useState(false);
-  const [authAction, setAuthAction] = useState(() => {
-    return localStorage.getItem('authAction') || null;
-  });
+  const fixturesPerPage = 24;
 
-  const fixturesPerPage = 12;
+  // New states for E2 requirements
+  const [recommendations, setRecommendations] = useState([
+    { fixture_id: 1, date: '2024-11-01', league_name: 'Premier League', home_team_name: 'Team A', away_team_name: 'Team B' },
+    { fixture_id: 2, date: '2024-11-02', league_name: 'La Liga', home_team_name: 'Team C', away_team_name: 'Team D' },
+    { fixture_id: 3, date: '2024-11-03', league_name: 'Serie A', home_team_name: 'Team E', away_team_name: 'Team F' }
+  ]);
+  const [showRecommendationsModal, setShowRecommendationsModal] = useState(false);
+  const [workerAvailable, setWorkerAvailable] = useState(false);
 
-  // const removeDuplicateFixtures = (fixtures) => {
-  //   const uniqueFixtures = [];
-  //   const fixtureIds = new Set();
+  const removeDuplicateFixtures = (fixtures) => {
+    const uniqueFixtures = [];
+    const fixtureIds = new Set();
 
-  //   for (const fixture of fixtures) {
-  //     if (!fixtureIds.has(fixture.fixture_id)) {
-  //       fixtureIds.add(fixture.fixture_id);
-  //       uniqueFixtures.push(fixture);
-  //     }
-  //   }
+    for (const fixture of fixtures) {
+      if (!fixtureIds.has(fixture.fixture_id)) {
+        fixtureIds.add(fixture.fixture_id);
+        uniqueFixtures.push(fixture);
+      }
+    }
 
-  //   return uniqueFixtures;
-  // };
-// eslint-disable-next-line
-  // const fetchUser = async () => {
-  //   try {
-  //     const encodedUserId = localStorage.getItem('userId');
-  //     const token = await getAccessTokenSilently();
-  //     const response = await axios.get(`https://api.nodecraft.me/users/${encodedUserId}`,
-  //       {
-  //         headers: {
-  //           Authorization: `Bearer ${token}`
-  //         }
-  //   });
-  //     setWalletBalance(response.data.wallet);
-  //   } catch (error) {
-  //     console.error('Error fetching wallet balance:', error);
-  //   }
-  // };
-// eslint-disable-next-line
-  // const fetchFixtures = async () => {
-  //   try {
-  //     const token = await getAccessTokenSilently();
-  //     const response = await axios.get('https://api.nodecraft.me/fixtures',
-  //       {
-  //         headers: {
-  //           Authorization: `Bearer ${token}`
-  //         }
-  //   });
-  //     const uniqueFixtures = removeDuplicateFixtures(response.data.data);
-  //     setFixtures(uniqueFixtures);
-  //     setFilteredFixtures(uniqueFixtures);
-  //   } catch (error) {
-  //     console.error('Error fetching fixtures:', error);
-  //   }
-  // };
+    return uniqueFixtures;
+  };
 
-  // const generateLongUserId = () => {
-  //   const timestamp = Date.now();
-  //   const highPrecision = Math.floor(performance.now() * 1000000);
-  //   const randomPart = Math.floor(Math.random() * 1000000000);
-  //   return `${timestamp}-${highPrecision}-${randomPart}`;
-  // };
-  // eslint-disable-next-line
-  // const signUpUser = async () => {
-  //   try {
-  //     const token = await getAccessTokenSilently();
-  //     const newUserId = generateLongUserId();
-      
-  //     await axios.post('https://api.nodecraft.me/users', {
-  //       id: newUserId,
-  //       username: user.nickname,
-  //       email: user.email,
-  //       password: "Nohaypassword",
-  //       wallet: 0.0
-  //     },
-  //     {
-  //       headers: {
-  //         Authorization: `Bearer ${token}`
-  //       },
-  //     }
-  //     );
-  //     localStorage.setItem('userId', newUserId);
-  //     fetchUser();
-  //     fetchFixtures();
-  //   } catch (error) {
-  //     console.error('Error signing up user:', error);
-  //   }
-  // };
+  const fetchUser = async () => {
+    try {
+      const encodedUserId = localStorage.getItem('userId');
 
-//   const logInUser = async () => {
-//     try {
-//       let userId = localStorage.getItem('userId');
-//       if (!userId) {
-//         const token = await getAccessTokenSilently();
-//         const response = await axios.get('https://api.nodecraft.me/users', {
-//           headers: {
-//             Authorization: `Bearer ${token}`,
-//           },
-//         });
+      const token = await getAccessTokenSilently();
+      const response = await axios.get(`https://api.nodecraft.me/users/${encodedUserId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setWalletBalance(response.data.wallet);
+      setBonuses(response.data.bonos);
+    } catch (error) {
+      console.error('Error fetching wallet balance:', error);
+    }
+  };
 
-//         const users = response.data.users;
-//         const existingUser = users.find((u) => u.email === user.email);
+  const fetchFixtures = async () => {
+    try {
+      const response = await axios.get('https://api.nodecraft.me/fixtures');
+      const uniqueFixtures = removeDuplicateFixtures(response.data.data);
+      setFixtures(uniqueFixtures);
+      setFilteredFixtures(uniqueFixtures);
+    } catch (error) {
+      console.error('Error fetching fixtures:', error);
+    }
+  };
 
-//         if (existingUser) {
-//           userId = existingUser.id;
-//           localStorage.setItem('userId', userId);
-//           fetchUser();
-//           fetchFixtures();
-//         } else {
-//           console.error('User not found.');
-//           alert('User not found. Please sign up.');
-//         }
-//       }
-//     } catch (error) {
-//       console.error('Error logging in user:', error);
-//     }
-//   };
-  
-//   const addMoneyToWallet = async () => {
-//     const amount = prompt('Enter the amount to add to your wallet:');
-//     const parsedAmount = parseInt(amount, 10);
+  const createUser = async () => {
+    try {
+      const token = await getAccessTokenSilently();
+      const encodedUserId = encodeURIComponent(user.sub).substring(16);
+      await axios.post('https://api.nodecraft.me/users', 
+        { 
+          id: encodedUserId,
+          username: user.nickname, 
+          email: user.email, 
+          password: "NoHayPassword", 
+          wallet: 0.0, 
+          bonos: {} 
+        }, 
+        {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      localStorage.setItem('userId', encodedUserId);
+    } catch (error) {
+      console.error('Error creating user:', error);
+    }
+  };
 
-//     if (!isNaN(parsedAmount) && parsedAmount > 0) {
-//       try {
-//         const userId = localStorage.getItem('userId');
+  const addMoneyToWallet = async () => {
+    const amount = prompt('Enter the amount to add to your wallet:');
+    const parsedAmount = parseInt(amount, 10);
 
-//         const token = await getAccessTokenSilently();
-//         const response = await axios.patch(
-//           `https://api.nodecraft.me/users/${userId}/wallet`,
-//           { amount: parsedAmount },
-//           {
-//             headers: {
-//               Authorization: `Bearer ${token}`
-//             }
-//       }
-//         );
-//         setWalletBalance(response.data.wallet);
-//         alert(`Added $${parsedAmount} to your wallet.`);
-//       } catch (error) {
-//         console.error('Error adding money to wallet:', error);
-//         alert('Failed to add money to wallet.');
-//       }
-//     } else {
-//       alert('Invalid amount entered. Please enter a valid integer.');
-//     }
-// };
+    if (!isNaN(parsedAmount) && parsedAmount > 0) {
+      try {
+        const userId = localStorage.getItem('userId');
+
+        const token = await getAccessTokenSilently();
+        const response = await axios.patch(
+          `https://api.nodecraft.me/users/${userId}/wallet`,
+          { amount: parsedAmount },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        setWalletBalance(response.data.wallet);
+        alert(`Added $${parsedAmount} to your wallet.`);
+      } catch (error) {
+        console.error('Error adding money to wallet:', error);
+        alert('Failed to add money to wallet.');
+      }
+    } else {
+      alert('Invalid amount entered. Please enter a valid integer.');
+    }
+  };
 
   const handleBuyBonusClick = (fixture) => {
     if (walletBalance >= 1000) {
@@ -181,145 +133,94 @@ function App() {
   };
 
   const buyBonus = async (fixture, result, quantity) => {
-    const cost = 1000 * quantity;
+    const cost = 1000;
     const encodedUserId = localStorage.getItem('userId');
+    const token = await getAccessTokenSilently();
+    if (result === 'draw'){
+      result = '---';
+    }
   
-    if (walletBalance >= cost && fixture.bonos >= quantity) {
-      setShowBuyModal(false);
-      setShowProcessingModal(true);
-  
+    if (walletBalance >= cost && fixture.bonos > 0) {
       try {
-        const token = await getAccessTokenSilently();
-        const response = await axios.post(
-          `https://api.nodecraft.me/fixtures/${fixture.fixture_id}/compra`, 
+        const request = await axios.post('https://api.nodecraft.me/mqtt/publish-request',
           { 
-            userId: encodedUserId, 
-            result: result, 
+            fixture_id: fixture.fixture_id,
+            league_name: fixture.league_name,
+            round: fixture.round,
+            date: fixture.date,
+            result: result,
             quantity: quantity
-          },
-          {
-            headers: {
-              Authorization: `Bearer ${token}`
-            }
           }
         );
-  
-        setShowProcessingModal(false);
-  
-        if (response.data.error) {
-          alert(response.data.error);
-        } else {
 
-          // Agregado generación de boleta post compra
-          const userData = {
-            name: user.nickname,
-            email: user.email
-          };
-
-          const matchData = {
-            teams: fixture.teams,
-            date: fixture.date,
-            amount: cost  // El valor depende de la cantidad
-          };
-
-          // Se genera el URL de la boleta y además se informa la ubicación
-          try {
-            const pdfUrl = await generateInvoice(userData, matchData);
-            alert(`Compra exitosa. Descarga tu boleta aquí: ${pdfUrl}. Ubicación: ${response.data.location.city}`);
-            const userId = localStorage.getItem('userId');
-            setWalletBalance(await fetchUser(userId, getAccessTokenSilently));
-
-            const uniqueFixtures = await fetchFixtures(getAccessTokenSilently);
-            setFixtures(uniqueFixtures);
-            setFilteredFixtures(uniqueFixtures);
-
-          } catch (error) {
-            alert('Error generando la boleta.');
-          }
+        if (!request.data.valid){
+          alert('Invalid request');
+          return;
         }
+
+        alert('Request sent');
+  
+        const response = await axios.patch(
+          `https://api.nodecraft.me/users/${encodedUserId}/wallet`,
+          { amount: -cost },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        fetchUser();
+
+        alert(`Bought a bonus for fixture ${fixture.fixture_id}`);
+        const fixtureResponse = await axios.patch(
+          `https://api.nodecraft.me/fixtures/${fixture.fixture_id}/bonos`,
+          { bonos: fixture.bonos - 1 },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );  
+        const addBonusToUser = await axios.patch(
+          `https://api.nodecraft.me/users/${encodedUserId}/bonos`,
+          { bonos: {
+            fixture_id: fixture.fixture_id,
+            league_name: fixture.league_name,
+            round: fixture.round,
+            date: fixture.date,
+            result: result,
+            quantity: quantity
+          }
+         },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
       } catch (error) {
-        setShowProcessingModal(false);
-        alert('Hubo un error al procesar la compra.');
+        console.error('Error buying bonus:', error);
+        alert('Failed to buy bonus.');
       }
     } else {
-      alert('Fondos insuficientes o bonos no disponibles.');
+      alert('Insufficient funds in wallet.');
     }
   };
 
+  const viewMyBonuses = () => {
+    setShowModal(true);
+  };
 
-  // const viewMyBonuses = async () => {
-  //   const userId = localStorage.getItem('userId');
-  
-  //   if (!userId) {
-  //     alert('No se pudo encontrar el ID del usuario.');
-  //     return;
-  //   }
-  
-  //   try {
-  //     const token = await getAccessTokenSilently();
-  //     const response = await axios.get(`https://api.nodecraft.me/requests/${userId}`, {
-  //       headers: {
-  //         Authorization: `Bearer ${token}`
-  //       }
-  //     });
-  
-  //     if (response.data && response.data.requests) {
-  //       setBonuses(response.data.requests);
-  //       setShowModal(true);
-  //     } else {
-  //       alert('No se encontraron bonuses para este usuario.');
-  //     }
-  //   } catch (error) {
-  //     console.error('Error al obtener los bonuses:', error);
-  //     alert('Error al obtener los bonuses.');
-  //   }
-  // };
-  
-  // eslint-disable-next-line
   useEffect(() => {
-    const initializeUser = async () => {
-      if (authAction !== null) {
-        localStorage.setItem('authAction', authAction);
-      }
-      if (isAuthenticated && authAction) {
-        try {
-          if (authAction === 'signup') {
-            const newUserId = await signUpUser(user, getAccessTokenSilently);
-            const wallet = await fetchUser(newUserId, getAccessTokenSilently);
-            setWalletBalance(wallet);
-            const uniqueFixtures = await fetchFixtures(getAccessTokenSilently);
-            setFixtures(uniqueFixtures);
-            setFilteredFixtures(uniqueFixtures);
-          } else if (authAction === 'login') {
-            const wallet = await logInUser(user.email, getAccessTokenSilently, fetchUser);
-            setWalletBalance(wallet);
-            const uniqueFixtures = await fetchFixtures(getAccessTokenSilently);
-            setFixtures(uniqueFixtures);
-            setFilteredFixtures(uniqueFixtures);
-          }
-        } catch (error) {
-          console.error('Error initializing user:', error);
-        }
-      }
-    };
+    if (isAuthenticated) {
+      createUser();
+      fetchFixtures();
+      fetchUser();
+      checkWorkerStatus();
+    }
+  }, [isAuthenticated]);
 
-    initializeUser();
-    // eslint-disable-next-line
-  }, [isAuthenticated, authAction]);
-
-  const handleLogInClick = () => {
-    setAuthAction('login');
-    loginWithRedirect();
-  };
-
-  const handleSignUpClick = () => {
-    setAuthAction('signup');
-    loginWithRedirect({
-      screen_hint: 'signup'
-    });
-  };
-  
-  // UseEffect para aplicar los filtros
   useEffect(() => {
     const applyFilters = () => {
       let filtered = fixtures;
@@ -353,50 +254,25 @@ function App() {
 
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
-  // Función para añadir dinero a la wallet
-  const handleAddMoneyToWallet = async () => {
-    const amount = prompt('Enter the amount to add to your wallet:');
-    const parsedAmount = parseInt(amount, 10);
+  // Additional functions for new requirements
 
-    if (!isNaN(parsedAmount) && parsedAmount > 0) {
-      try {
-        const newBalance = await addMoneyService(parsedAmount, getAccessTokenSilently);
-        setWalletBalance(newBalance);
-        alert(`Added $${parsedAmount} to your wallet.`);
-      } catch (error) {
-        alert('Failed to add money to wallet.');
-      }
-    } else { 
-      alert('Invalid amount entered. Please enter a valid integer.');
-    }
-  };
-
-  // Función para ver mis bonos
-  const handleViewBonuses = async () => {
-    const userId = localStorage.getItem('userId');
-
-    if (!userId) {
-      alert('No se pudo encontrar el ID del usuario.');
-      return;
-    }
-
+  const checkWorkerStatus = async () => {
     try {
-      const fetchedBonuses = await viewMyBonusesService(userId, getAccessTokenSilently);
-      setBonuses(fetchedBonuses);
-      setShowModal(true);
+      const response = await axios.get('/heartbeat');
+      setWorkerAvailable(response.data === true);
     } catch (error) {
-      alert('Error al obtener los bonuses.');
+      console.error('Error checking worker status:', error);
+      setWorkerAvailable(false);
     }
   };
 
-  const handleLogout = () => {
-    // Eliminar userId del localStorage
-    localStorage.removeItem('userId');
+  const fetchRecommendations = async () => {
+    setShowRecommendationsModal(true);
+  };
 
-    // Llamar a la función logout
-    logout({ returnTo: window.location.origin });
-    // logout({ returnTo: 'http://localhost:3000/' }); // debugging
-
+  const generateRecommendations = () => {
+    alert('Recommendations generation initiated.');
+    fetchRecommendations();
   };
 
   return (
@@ -405,17 +281,46 @@ function App() {
         {isAuthenticated ? (
           <>
             <img src={user.picture} alt={user.name} className="App-logo" />
-            <p>Welcome, {user.name} con mail {user.email}</p>
-            <button onClick={handleLogout}>
+            <p>Welcome,</p>
+            <button onClick={() => logout({ returnTo: window.location.origin })}>
               Log Out
             </button>
             <div className="wallet-balance">
               <p>Wallet Balance: ${walletBalance}</p>
-              <button onClick={handleAddMoneyToWallet}>Add Money to Wallet</button>
+              <button onClick={addMoneyToWallet}>Add Money to Wallet</button>
             </div>
             <div className="bonuses-section">
-              <button onClick={handleViewBonuses}>View My Bonuses</button>
+              <button onClick={viewMyBonuses}>View My Bonuses</button>
             </div>
+
+            {/* Additional UI components for E2 */}
+            <div className="worker-status">
+              <p>Worker Status: {workerAvailable ? 'Available' : 'Unavailable'}</p>
+            </div>
+
+            <button onClick={fetchRecommendations}>View Recommendations</button>
+            <button onClick={generateRecommendations}>Generate Recommendations</button>
+
+            {showRecommendationsModal && (
+              <div className="modal">
+                <div className="modal-content">
+                  <h2>Recommendations</h2>
+                  {recommendations.length > 0 ? (
+                    recommendations.map((rec, index) => (
+                      <div key={index}>
+                        <p>League: {rec.league_name}</p>
+                        <p>{rec.home_team_name} vs {rec.away_team_name}</p>
+                        <p>Date: {rec.date}</p>
+                        <p>Link: <a href={`/fixtures/${rec.fixture_id}`}>View Fixture</a></p>
+                      </div>
+                    ))
+                  ) : (
+                    <p>No recommendations available.</p>
+                  )}
+                  <button onClick={() => setShowRecommendationsModal(false)}>Close</button>
+                </div>
+              </div>
+            )}
 
             <div className="filters">
               <input
@@ -463,14 +368,16 @@ function App() {
                     </div>
                     <div className="fixture-odds">
                       {fixture.odds && fixture.odds.map((odd, index) => (
-                        <div key={index}>
+                        <>
                           <p>{odd.name}: Odd</p>
+                          <div key={index}>
                           {odd.values.map((valueObj, valueIndex) => (
                             <p key={valueIndex}>{valueObj.value}: {valueObj.odd}</p>
                           ))}
                           <div className='text-colored'>Bonos: {fixture.bonos}</div>
                         </div>
-                        ))}
+                          </>
+                      ))}
                     </div>
                     <button onClick={() => handleBuyBonusClick(fixture)}>Buy Bonus</button>
                   </div>
@@ -492,23 +399,12 @@ function App() {
               ))}
             </div>
 
-            {showProcessingModal && (
-              <div className="modal">
-                <div className="modal-content">
-                  <h2 className='text-colored'>Procesando tu compra...</h2>
-                  <p className='text-colored'>Por favor, espera mientras validamos la compra.</p>
-                  <p className='text-colored'>Te avisaremos cuando hayamos validado tu compra</p>
-                  <button onClick={() => setShowProcessingModal(false)}>Cerrar</button>
-                </div>
-              </div>
-            )}
-
             {showBuyModal && (
               <div className="modal">
                 <div className="modal-content">
-                  <h2 className='text-colored'>Confirmar Compra</h2>
-                  <label className='text-colored'>
-                    Cantidad:
+                  <h2 className='text-colored'>Buy Bonus</h2>
+                  <label>
+                    Quantity:
                     <input
                       type="number"
                       min="1"
@@ -517,26 +413,25 @@ function App() {
                     />
                   </label>
                   <label className='text-colored'>
-                    Resultado:
+                    Result:
                     <select value={result} onChange={(e) => setResult(e.target.value)}>
-                      <option value="home">Home</option>
-                      <option value="away">Away</option>
-                      <option value="draw">Draw</option>
+                      <option className='text-colored' value="home">Home</option>
+                      <option className='text-colored' value="away">Away</option>
+                      <option className='text-colored' value="draw">Draw</option>
                     </select>
                   </label>
-                  <button onClick={() => buyBonus(selectedFixture, result, quantity)}>Confirmar Compra</button>
-                  <button onClick={() => setShowBuyModal(false)}>Cancelar</button>
+                  <button onClick={buyBonus(selectedFixture, result, quantity)}>Confirm Purchase</button>
+                  <button onClick={() => setShowBuyModal(false)}>Cancel</button>
                 </div>
               </div>
             )}
-
 
             {showAddMoneyModal && (
               <div className="modal">
                 <div className="modal-content">
                   <h2 className='text-colored'>Insufficient funds</h2>
                   <p className='text-colored'>Your current balance is not enough to buy the bonus. Please add money to your wallet.</p>
-                  <button onClick={handleAddMoneyToWallet}>Add Money</button>
+                  <button onClick={addMoneyToWallet}>Add Money</button>
                   <button onClick={() => setShowAddMoneyModal(false)}>Close</button>
                 </div>
               </div>
@@ -549,13 +444,10 @@ function App() {
                   {bonuses.length > 0 ? (
                     bonuses.map((bonus, index) => (
                       <div key={index} className="bonus-item">
-                        <p className='text-colored'>League: {bonus.league_name}</p>
-                        <p className='text-colored'>Round: {bonus.round}</p>
-                        <p className='text-colored'>Date: {new Date(bonus.date).toLocaleDateString()}</p>
-                        <p className='text-colored'>Result: {bonus.result}</p>
-                        <p className='text-colored'>Quantity: {bonus.quantity}</p>
-                        <p className='text-colored'>Processed: {bonus.processed ? 'Yes' : 'No'}</p>
-                        <p className='text-colored'>Odd: {bonus.odd}</p>
+                        <p className='text-colored'>Fixture ID: {bonus.fixture_id}</p>
+                        <p className='text-colored'>Team Supported: {bonus.team_name}</p>
+                        <p className='text-colored'>Bet Amount: ${bonus.amount}</p>
+                        <p className='text-colored'>Status: {bonus.status}</p>
                       </div>
                     ))
                   ) : (
@@ -570,8 +462,7 @@ function App() {
           <div className="welcome-container">
             <h1>Welcome to NodeCraft</h1>
             <p>Your ultimate destination for football fixtures and more!</p>
-            <button onClick={handleLogInClick}>Log In</button>
-            <button onClick={handleSignUpClick}>Sign Up</button>
+            <button onClick={() => loginWithRedirect()}>Log In</button>
           </div>
         )}
       </header>
