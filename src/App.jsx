@@ -31,6 +31,8 @@ function App() {
   const navigate = useNavigate();
   const apiUrl = process.env.REACT_APP_API_URL;
 
+  const [workerAvailable, setWorkerAvailable] = useState(false);
+
   const fixturesPerPage = 12;
 
   const handleBuyBonusClick = (fixture) => {
@@ -128,6 +130,7 @@ function App() {
           const uniqueFixtures = await fetchFixtures(getAccessTokenSilently);
           setFixtures(uniqueFixtures);
           setFilteredFixtures(uniqueFixtures);
+          checkWorkerStatus();
         } catch (error) {
           console.error('Error initializing user:', error);
         }
@@ -218,6 +221,16 @@ function App() {
 
   console.log("isAuthenticated", isAuthenticated)
 
+  const checkWorkerStatus = async () => {
+    try {
+      const response = await axios.get('https://nodecraft.me/heartbeat');
+      setWorkerAvailable(response.data.status === true);
+    } catch (error) {
+      console.error('Error checking worker status:', error);
+      setWorkerAvailable(false);
+    }
+  };
+
   return (
     <div className="App">
       <header className="App-header">
@@ -234,6 +247,10 @@ function App() {
             </div>
             <div className="bonuses-section">
               <button onClick={redirectToMyRequests}>My Requests</button>
+            </div>
+
+            <div className="worker-status">
+              <p>Worker Status: {workerAvailable ? 'Available' : 'Unavailable'}</p>
             </div>
 
             <div className="filters">
