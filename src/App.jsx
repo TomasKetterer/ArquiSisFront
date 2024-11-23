@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth0 } from '@auth0/auth0-react';
 import {useNavigate} from 'react-router-dom';
+import config from './config.js';
 import {
   fetchUser,
   fetchFixtures,
@@ -16,6 +17,7 @@ import {
 
 function App() {
   const { loginWithRedirect, logout, isAuthenticated, user, getAccessTokenSilently } = useAuth0();
+  const [role, setRole] = useState("user");
   const [fixtures, setFixtures] = useState([]);
   const [filteredFixtures, setFilteredFixtures] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -102,6 +104,11 @@ function App() {
       alert('Hubo un error al procesar la compra.');
     }
   };
+
+  async function isAdmin() {
+    const isAdmin = role.includes('Admin');
+    return isAdmin;
+  }
   
   // eslint-disable-next-line
   useEffect(() => {
@@ -112,6 +119,24 @@ function App() {
           if (!userId) {
             // Si no hay userId en el localStorage, buscarlo del backend
             const token = await getAccessTokenSilently();
+            console.log(token)
+            const DOMAIN = process.env.REACT_APP_AUTH0_DOMAIN;
+            const ROLES_TOKEN = config.VITE_AUTH0_ROLES_TOKEN;
+            try{
+              const rolesResponse = await axios.get(`https://${DOMAIN}/api/v2/users/${user.sub}/roles`, {
+                headers: {
+                  'Authorization': `Bearer ${ROLES_TOKEN}`,
+                }
+              });
+              const role = rolesResponse.data.map((role) => role.name);
+              setRole(role);
+              localStorage.setItem('role', role);
+            } catch (error) {
+              console.error("Error al obtener roles:", error.response?.data || error.message);
+              return [];
+            }
+            const boolAdmin = await isAdmin();
+            console.log("isAdmin", boolAdmin)
             const apiUrl = process.env.REACT_APP_API_URL;
             const response = await axios.get(`${apiUrl}/users`, {
               headers: {
@@ -212,6 +237,7 @@ function App() {
   const handleLogout = () => {
     // Eliminar userId del localStorage
     localStorage.removeItem('userId');
+    localStorage.removeItem('role');
 
     // Llamar a la función logout
     logout({ returnTo: window.location.origin });
@@ -248,7 +274,7 @@ function App() {
         {isAuthenticated ? (
           <>
             <img src={user.picture} alt={user.name} className="App-logo" />
-            <p>Welcome, {user.name}</p>
+            <p>Welcome, {user.name}, isAdmin? {localStorage.getItem('role') === "Admin" ? "true" : "false"}</p>
             <button onClick={handleLogout}>
               Log Out
             </button>
