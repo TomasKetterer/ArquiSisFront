@@ -18,6 +18,7 @@ import {
 function App() {
   const { loginWithRedirect, logout, isAuthenticated, user, getAccessTokenSilently } = useAuth0();
   const [role, setRole] = useState("user");
+  const [isReserving, setIsReserving] = useState(false);
   const [fixtures, setFixtures] = useState([]);
   const [filteredFixtures, setFilteredFixtures] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -31,6 +32,7 @@ function App() {
   const [result, setResult] = useState('home');
   const [quantity, setQuantity] = useState(1);
   const [showAddMoneyModal, setShowAddMoneyModal] = useState(false);
+  const [isUserModalOpen, setIsUserModalOpen] = useState(false);
   const [authAction, setAuthAction] = useState(() => {
     return localStorage.getItem('authAction') || null;
   });
@@ -104,11 +106,6 @@ function App() {
       alert('Hubo un error al procesar la compra.');
     }
   };
-
-  async function isAdmin() {
-    const isAdmin = role.includes('Admin');
-    return isAdmin;
-  }
   
   // eslint-disable-next-line
   useEffect(() => {
@@ -116,9 +113,9 @@ function App() {
       if (isAuthenticated) {
         try {
           let userId = localStorage.getItem('userId');
+          const token = await getAccessTokenSilently();
           if (!userId) {
             // Si no hay userId en el localStorage, buscarlo del backend
-            const token = await getAccessTokenSilently();
             console.log(token)
             const DOMAIN = process.env.REACT_APP_AUTH0_DOMAIN;
             const ROLES_TOKEN = config.VITE_AUTH0_ROLES_TOKEN;
@@ -128,15 +125,17 @@ function App() {
                   'Authorization': `Bearer ${ROLES_TOKEN}`,
                 }
               });
-              const role = rolesResponse.data.map((role) => role.name);
-              setRole(role);
-              localStorage.setItem('role', role);
+              const roles = rolesResponse.data.map((role) => role.name);
+              setRole(roles);
+              localStorage.setItem('role', roles);
             } catch (error) {
               console.error("Error al obtener roles:", error.response?.data || error.message);
-              return [];
+              return;
             }
-            const boolAdmin = await isAdmin();
-            console.log("isAdmin", boolAdmin)
+
+            const isUserAdmin = localStorage.getItem('role').includes('Admin');
+            console.log("isAdmin", isUserAdmin);
+            //obtener lista de usuarios
             const apiUrl = process.env.REACT_APP_API_URL;
             const response = await axios.get(`${apiUrl}/users`, {
               headers: {
@@ -152,6 +151,22 @@ function App() {
             } else {
               // Si el usuario no existe en la base de datos, crearlo
               userId = await signUpUser(user, getAccessTokenSilently);
+            }
+
+            // Actualizar isAdmin en la base de datos
+            try {
+              await axios.patch(
+                `${apiUrl}/users/${userId}/isAdmin`, 
+                { isAdmin: isUserAdmin },
+                {
+                  headers: {
+                    Authorization: `Bearer ${token}`
+                  }
+                }
+              );
+              console.log(`isAdmin actualizado a ${isUserAdmin} para el usuario ${userId}`);
+            } catch (error) {
+              console.error('Error al actualizar isAdmin:', error.response?.data || error.message);
             }
           }
           const wallet = await fetchUser(userId, getAccessTokenSilently);
@@ -268,100 +283,175 @@ function App() {
     setRecommendation(result); 
   };
 
+  const handleConfirmPurchase = () => {
+    buyBonus(selectedFixture, result, quantity);
+    localStorage.setItem('isReserving', isReserving);
+    setShowBuyModal(false);
+    setIsReserving(false); // Resetear el estado después de confirmar
+  };
+
   return (
     <div className="App">
-      <header className="App-header">
-        {isAuthenticated ? (
-          <>
-            <img src={user.picture} alt={user.name} className="App-logo" />
-            <p>Welcome, {user.name}, isAdmin? {localStorage.getItem('role') === "Admin" ? "true" : "false"}</p>
-            <button onClick={handleLogout}>
-              Log Out
+  <header className="App-header">
+    {isAuthenticated ? (
+      <>
+        <div
+          className={`user-info-container ${isUserModalOpen ? 'open' : 'closed'}`}>
+          <div className="user-info">
+            <button
+              className="toggle-button"
+              onClick={() => setIsUserModalOpen(!isUserModalOpen)}>
+              {isUserModalOpen ? '<' : '>'}
             </button>
-            <div className="wallet-balance">
-              <p>Wallet Balance: ${walletBalance}</p>
-              <button onClick={handleAddMoneyToWallet}>Add Money to Wallet</button>
+            {isUserModalOpen && (
+                <>
+                <img
+                  src={user.picture}
+                  alt={user.name}
+                  className="user-picture"/>
+                <h3>User Information</h3>
+                <p>
+                  Welcome, {user.name}
+                  <br />
+                  isAdmin?{' '}
+                  {localStorage.getItem('role') === 'Admin' ? 'true' : 'false'}
+                </p>
+                <button onClick={handleLogout} className="logout-button">
+                  Log Out
+                </button>
+                <div className="wallet-balance">
+                  <p>Wallet Balance: ${walletBalance}</p>
+                  <button
+                    onClick={handleAddMoneyToWallet}
+                    className="add-money-button">
+                    Add Money to Wallet
+                  </button>
+                </div>
+                <div className="bonuses-section">
+                  <button
+                    onClick={redirectToMyRequests}
+                    className="my-requests-button">
+                    My Requests
+                  </button>
+                </div>
+                <div className="worker-status">
+                  <p>
+                    Worker Status: {workerAvailable ? 'Available' : 'Unavailable'}
+                  </p>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+            
+        <div className="filters-container">
+          <h3 className="filters-title">Filters</h3>
+          <div className="filters">
+            <div className="filter-group">
+              <label htmlFor="filter-home" className="filter-label">Home Team</label>
+              <input
+                id="filter-home"
+                type="text"
+                placeholder="Filter by home team"
+                value={filters.home}
+                onChange={(e) => setFilters({ ...filters, home: e.target.value })}
+                className="filter-input"/>
             </div>
-            <div className="bonuses-section">
-              <button onClick={redirectToMyRequests}>My Requests</button>
+            <div className="filter-group">
+              <label htmlFor="filter-away" className="filter-label">Away Team</label>
+              <input
+                id="filter-away"
+                type="text"
+                placeholder="Filter by away team"
+                value={filters.away}
+                onChange={(e) => setFilters({ ...filters, away: e.target.value })}
+                className="filter-input"/>
             </div>
+            <div className="filter-group">
+              <label htmlFor="filter-date" className="filter-label">Date</label>
+              <input
+                id="filter-date"
+                type="date"
+                value={filters.date}
+                onChange={(e) => setFilters({ ...filters, date: e.target.value })}
+                className="filter-input"/>
+            </div>
+          </div>
+        </div>
 
-            <div className="worker-status">
-              <p>Worker Status: {workerAvailable ? 'Available' : 'Unavailable'}</p>
-            </div>
-
-            <div>
-              <button onClick={() => makeRecommendations()}>View Recommendation</button>
+            <div className="recommendation-section">
+              <button onClick={() => makeRecommendations()} className="recommendation-button">
+                Ask for Recommendation
+              </button>
               {recommendation && (
-                <div>
+                <div className="recommendation-result">
                   <h3>Recommendation:</h3>
                   <pre>{JSON.stringify(recommendation, null, 2)}</pre>
                 </div>
               )}
             </div>
 
-            <div className="filters">
-              <input
-                type="text"
-                placeholder="Filter by home team"
-                value={filters.home}
-                onChange={(e) => setFilters({ ...filters, home: e.target.value })}
-              />
-              <input
-                type="text"
-                placeholder="Filter by away team"
-                value={filters.away}
-                onChange={(e) => setFilters({ ...filters, away: e.target.value })}
-              />
-              <input
-                type="date"
-                value={filters.date}
-                onChange={(e) => setFilters({ ...filters, date: e.target.value })}
-              />
-            </div>
 
             <div className="fixtures-grid">
               {currentFixtures.length > 0 ? (
-                currentFixtures.map(fixture => (
+                currentFixtures.map((fixture) => (
                   <div key={fixture.fixture_id} className="fixture-item">
                     <div className="league-info">
                       <p>{fixture.league_name}</p>
                     </div>
                     <div className="teams-container">
                       <div className="team-info">
-                        <img src={fixture.home_team_logo} alt={fixture.home_team_name} />
-                        <span>{fixture.home_team_name}</span>
+                        <img
+                          src={fixture.home_team_logo}
+                          alt={fixture.home_team_name}
+                          className="team-logo"
+                        />
+                        <span className="text-colored">{fixture.home_team_name}</span>
                       </div>
-                      <span className='text-colored'> vs </span>
+                      <span className="vs-text">vs</span>
                       <div className="team-info">
-                        <img src={fixture.away_team_logo} alt={fixture.away_team_name} />
-                        <span>{fixture.away_team_name}</span>
+                        <img
+                          src={fixture.away_team_logo}
+                          alt={fixture.away_team_name}
+                          className="team-logo"
+                        />
+                        <span className="text-colored">{fixture.away_team_name}</span>
                       </div>
                     </div>
                     <div className="fixture-date">
-                      <p>{new Date(fixture.date).toLocaleDateString()} - {new Date(fixture.date).toLocaleTimeString()}</p>
-                    </div>
-                    <div className="fixture-goals">
-                      <p>Score: {fixture.goals_home} - {fixture.goals_away}</p>
+                      <p>
+                        {new Date(fixture.date).toLocaleDateString()} -{" "}
+                        {new Date(fixture.date).toLocaleTimeString()}
+                      </p>
                     </div>
                     <div className="fixture-odds">
-                      {fixture.odds && fixture.odds.map((odd, index) => (
-                        <div key={index}>
-                          <p>{odd.name}: Odd</p>
-                          {odd.values.map((valueObj, valueIndex) => (
-                            <p key={valueIndex}>{valueObj.value}: {valueObj.odd}</p>
-                          ))}
-                          <div className='text-colored'>Bonos: {fixture.bonos}</div>
-                        </div>
+                      {fixture.odds &&
+                        fixture.odds.map((odd, index) => (
+                          <div key={index} className="odds-info">
+                            <div className="odds-values">
+                              {odd.values.map((valueObj, valueIndex) => (
+                                <div key={valueIndex} className="odds-value">
+                                  <p>{valueObj.value}</p>
+                                  <p>{valueObj.odd}</p>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
                         ))}
                     </div>
-                    <button onClick={() => handleBuyBonusClick(fixture)}>Buy Bonus</button>
+                    <div className="bonos-info">Bonos: {fixture.bonos}</div>
+                    <button
+                      onClick={() => handleBuyBonusClick(fixture)}
+                      className="buy-button">
+                      Purchase
+                    </button>
                   </div>
                 ))
               ) : (
-                <p className='text-colored'>No fixtures available</p>
+                <p className="no-fixtures text-colored">No fixtures available</p>
               )}
             </div>
+
 
             <div className="pagination">
               {Array.from({ length: Math.ceil(filteredFixtures.length / fixturesPerPage) }, (_, index) => (
@@ -387,32 +477,56 @@ function App() {
             )}
 
             {showBuyModal && (
-              <div className="modal">
-                <div className="modal-content">
-                  <h2 className='text-colored'>Confirmar Compra</h2>
-                  <label className='text-colored'>
-                    Cantidad:
-                    <input
-                      type="number"
-                      min="1"
-                      value={quantity}
-                      onChange={(e) => setQuantity(parseInt(e.target.value))}
-                    />
-                  </label>
-                  <label className='text-colored'>
-                    Resultado:
-                    <select value={result} onChange={(e) => setResult(e.target.value)}>
-                      <option value="home">Home</option>
-                      <option value="away">Away</option>
-                      <option value="draw">Draw</option>
-                    </select>
-                  </label>
-                  <button onClick={() => buyBonus(selectedFixture, result, quantity)}>Confirmar Compra</button>
-                  <button onClick={() => setShowBuyModal(false)}>Cancelar</button>
+              <div className="modal-2">
+                <div className="modal-content-2">
+                  <h2 className="modal-title">Confirmar Compra</h2>
+                  <div className="modal-body">
+                    <label className="modal-label">
+                      <p>Cantidad:</p>
+                      <input
+                        type="number"
+                        min="1"
+                        value={quantity}
+                        onChange={(e) => setQuantity(parseInt(e.target.value))}
+                        className="modal-input"/>
+                    </label>
+                    {localStorage.getItem('role') === "Admin" && (
+                      <label className="modal-label">
+                        <p>Reservar Bonos</p>
+                        <input
+                          type="checkbox"
+                          checked={isReserving}
+                          onChange={(e) => setIsReserving(e.target.checked)}
+                          className="modal-checkbox"/>
+                      </label>
+                    )}
+                    <label className="modal-label">
+                      <p>Resultado:</p>
+                      <select
+                        value={result}
+                        onChange={(e) => setResult(e.target.value)}
+                        className="modal-select">
+                        <option value="home">Home</option>
+                        <option value="away">Away</option>
+                        <option value="draw">Draw</option>
+                      </select>
+                    </label>
+                  </div>
+                  <div className="modal-footer">
+                    <button
+                      onClick={handleConfirmPurchase}
+                      className="modal-button confirm-button">
+                      Confirmar Compra
+                    </button>
+                    <button
+                      onClick={() => {setShowBuyModal(false); setIsReserving(false);}}
+                      className="modal-button cancel-button">
+                      Cancelar
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
-
 
             {showAddMoneyModal && (
               <div className="modal">
