@@ -16,6 +16,8 @@ function Routing () {
             redirectUri={window.location.origin}
             cacheLocation="localstorage" // Añade esta línea
             useRefreshTokens={true}      // Añade esta línea
+            scope="openid profile email offline_access"
+            audience="https://api.nodecraft.me"
         >
             <BrowserRouter>
                 <Routes>

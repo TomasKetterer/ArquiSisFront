@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth0 } from '@auth0/auth0-react';
 import {useNavigate} from 'react-router-dom';
-import config from './config.js';
+import getRolesToken from './services/authService.js';
 import {
   fetchUser,
   fetchFixtures,
@@ -21,6 +21,8 @@ function App() {
   const [isReserving, setIsReserving] = useState(false);
   const [fixtures, setFixtures] = useState([]);
   const [filteredFixtures, setFilteredFixtures] = useState([]);
+  const [showReservedFixtures, setShowReservedFixtures] = useState(false);
+  const [discountPercentage, setDiscountPercentage] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [filters, setFilters] = useState({ home: '', away: '', date: '' });
   const [walletBalance, setWalletBalance] = useState(0);
@@ -68,7 +70,8 @@ function App() {
         { 
           userId: encodedUserId, 
           result: result, 
-          quantity: quantity
+          quantity: quantity,
+          is_admin_bono: showReservedFixtures
         },
         {
           headers: {
@@ -118,7 +121,8 @@ function App() {
             // Si no hay userId en el localStorage, buscarlo del backend
             console.log(token)
             const DOMAIN = process.env.REACT_APP_AUTH0_DOMAIN;
-            const ROLES_TOKEN = config.VITE_AUTH0_ROLES_TOKEN;
+            const ROLES_TOKEN = await getRolesToken();
+            console.log('roles token:', ROLES_TOKEN);
             try{
               const rolesResponse = await axios.get(`https://${DOMAIN}/api/v2/users/${user.sub}/roles`, {
                 headers: {
@@ -171,7 +175,7 @@ function App() {
           }
           const wallet = await fetchUser(userId, getAccessTokenSilently);
           setWalletBalance(wallet);
-          const uniqueFixtures = await fetchFixtures(getAccessTokenSilently);
+          const uniqueFixtures = await fetchFixtures(getAccessTokenSilently, showReservedFixtures);
           setFixtures(uniqueFixtures);
           setFilteredFixtures(uniqueFixtures);
           checkWorkerStatus();
@@ -196,6 +200,24 @@ function App() {
       screen_hint: 'signup'
     });
   };
+
+  // UseEffect para cambiar las fixtures
+
+  useEffect(() => {
+    const loadFixtures = async () => {
+      try {
+        console.log("Intentando cargar fixtures...");
+        const fetchedFixtures = await fetchFixtures(getAccessTokenSilently, showReservedFixtures);
+        console.log("Fixtures cargadas:", fetchedFixtures);
+        setFixtures(fetchedFixtures);
+        setFilteredFixtures(fetchedFixtures);
+      } catch (error) {
+        console.error("Error en loadFixtures:", error);
+      }
+    };
+    loadFixtures();
+  }, [showReservedFixtures]);
+  
   
   // UseEffect para aplicar los filtros
   useEffect(() => {
@@ -290,6 +312,30 @@ function App() {
     setIsReserving(false); // Resetear el estado después de confirmar
   };
 
+  const handleActivateDiscount = async () => {
+    if (discountPercentage < 0 || discountPercentage > 10) {
+      alert('Discount percentage must be between 0 and 10.');
+      return;
+    }
+
+    try {
+      const token = await getAccessTokenSilently()
+      await axios.post(
+        `${apiUrl}/fixtures/discount`,
+        { discount: discountPercentage },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }
+      );
+      alert('Descuento aplicado exitosamente');
+    } catch (error) {
+      console.error('Error al aplicar descuento:', error);
+      alert('Error al aplicar descuento');
+    }
+  };
+
   return (
     <div className="App">
   <header className="App-header">
@@ -304,45 +350,72 @@ function App() {
               {isUserModalOpen ? '<' : '>'}
             </button>
             {isUserModalOpen && (
-                <>
-                <img
-                  src={user.picture}
-                  alt={user.name}
-                  className="user-picture"/>
-                <h3>User Information</h3>
-                <p>
-                  Welcome, {user.name}
-                  <br />
-                  isAdmin?{' '}
-                  {localStorage.getItem('role') === 'Admin' ? 'true' : 'false'}
-                </p>
-                <button onClick={handleLogout} className="logout-button">
-                  Log Out
-                </button>
-                <div className="wallet-balance">
-                  <p>Wallet Balance: ${walletBalance}</p>
-                  <button
-                    onClick={handleAddMoneyToWallet}
-                    className="add-money-button">
-                    Add Money to Wallet
-                  </button>
-                </div>
-                <div className="bonuses-section">
-                  <button
-                    onClick={redirectToMyRequests}
-                    className="my-requests-button">
-                    My Requests
-                  </button>
-                </div>
-                <div className="worker-status">
+              <>
+              <div className="user-content">
+                <div className="user-details">
+                  <img
+                    src={user.picture}
+                    alt={user.name}
+                    className="user-picture"
+                  />
+                  <h3>User Information</h3>
                   <p>
-                    Worker Status: {workerAvailable ? 'Available' : 'Unavailable'}
+                    Welcome, {user.name}
+                    <br />
+                    isAdmin?{' '}
+                    {localStorage.getItem('role') === 'Admin' ? 'true' : 'false'}
                   </p>
+                  <button onClick={handleLogout} className="logout-button">
+                    Log Out
+                  </button>
+                  <div className="wallet-balance">
+                    <p>Wallet Balance: ${walletBalance}</p>
+                    <button
+                      onClick={handleAddMoneyToWallet}
+                      className="add-money-button">
+                      Add Money to Wallet
+                    </button>
+                  </div>
+                  <div className="bonuses-section">
+                    <button
+                      onClick={redirectToMyRequests}
+                      className="my-requests-button">
+                      My Requests
+                    </button>
+                  </div>
+                  <div className="worker-status">
+                    <p>
+                      Worker Status: {workerAvailable ? 'Available' : 'Unavailable'}
+                    </p>
+                  </div>
                 </div>
+                {localStorage.getItem('role') === "Admin" && (
+                  <div className="admin-discount-section">
+                    <h3>Activar Descuento para Bonos Reservados</h3>
+                    <label className="discount-label">
+                      Porcentaje (0% - 10%):
+                      <input
+                        type="number"
+                        min="0"
+                        max="10"
+                        value={discountPercentage}
+                        onChange={(e) => setDiscountPercentage(e.target.value)}
+                        className="discount-input"
+                      />
+                    </label>
+                    <button
+                      onClick={handleActivateDiscount}
+                      className="activate-discount-button">
+                      Aplicar Descuento
+                    </button>
+                  </div>
+                )}
+              </div>
               </>
             )}
           </div>
         </div>
+
             
         <div className="filters-container">
           <h3 className="filters-title">Filters</h3>
@@ -391,6 +464,9 @@ function App() {
               )}
             </div>
 
+            <button onClick={() => setShowReservedFixtures(!showReservedFixtures)} className='recommendation-button'>
+              {showReservedFixtures ? 'Ver Fixtures Generales' : 'Ver Fixtures Reservados'}
+            </button>
 
             <div className="fixtures-grid">
               {currentFixtures.length > 0 ? (
@@ -439,7 +515,7 @@ function App() {
                           </div>
                         ))}
                     </div>
-                    <div className="bonos-info">Bonos: {fixture.bonos}</div>
+                    <div className="bonos-info">Bonos: {showReservedFixtures === true ? fixture.bonos_reservados : fixture.bonos}</div>
                     <button
                       onClick={() => handleBuyBonusClick(fixture)}
                       className="buy-button">
@@ -490,7 +566,7 @@ function App() {
                         onChange={(e) => setQuantity(parseInt(e.target.value))}
                         className="modal-input"/>
                     </label>
-                    {localStorage.getItem('role') === "Admin" && (
+                    {localStorage.getItem('role') === "Admin" && (showReservedFixtures === false) && (
                       <label className="modal-label">
                         <p>Reservar Bonos</p>
                         <input
@@ -511,6 +587,12 @@ function App() {
                         <option value="draw">Draw</option>
                       </select>
                     </label>
+                    <div className="price-info">
+                      <p>Precio: ${showReservedFixtures ? quantity * 1000 * (1 - selectedFixture.admin_bonos_discount) : quantity*1000}</p>
+                      {(showReservedFixtures === true) && (selectedFixture.admin_bonos_discount > 0) && (
+                        <h4>{100 * selectedFixture.admin_bonos_discount}% de descuento!</h4>
+                      )}
+                    </div>
                   </div>
                   <div className="modal-footer">
                     <button

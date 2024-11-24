@@ -49,11 +49,15 @@ export const fetchUser = async (userId, getAccessTokenSilently) => {
  * @param {Function} getAccessTokenSilently - Función para obtener el token de acceso.
  * @returns {Promise<Array>} Lista de fixtures únicos.
  */
-export const fetchFixtures = async (getAccessTokenSilently) => {
+export const fetchFixtures = async (getAccessTokenSilently, showReservedFixtures) => {
     try {
-        const token = await getAccessTokenSilently();
+        const token = await getAccessTokenSilently({
+            audience: "https://api.nodecraft.me", 
+            scope: "openid profile email offline_access"
+          });
         const apiUrl = process.env.REACT_APP_API_URL;
-        const response = await axios.get(`${apiUrl}/fixtures`, {
+        const endpoint = showReservedFixtures ? '/fixtures/reserved' : '/fixtures';
+        const response = await axios.get(`${apiUrl}${endpoint}`, {
             headers: {
                 Authorization: `Bearer ${token}`
             }
