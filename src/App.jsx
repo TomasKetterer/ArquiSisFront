@@ -18,6 +18,7 @@ import {
 function App() {
   const { loginWithRedirect, logout, isAuthenticated, user, getAccessTokenSilently } = useAuth0();
   const [role, setRole] = useState("user");
+  const [RolesToken, setRolesToken] = useState(null);
   const [isReserving, setIsReserving] = useState(false);
   const [fixtures, setFixtures] = useState([]);
   const [filteredFixtures, setFilteredFixtures] = useState([]);
@@ -123,6 +124,8 @@ function App() {
             const DOMAIN = process.env.REACT_APP_AUTH0_DOMAIN;
             const ROLES_TOKEN = await getRolesToken();
             console.log('roles token:', ROLES_TOKEN);
+            setRolesToken(ROLES_TOKEN);
+            console.log(user.sub)
             try{
               const rolesResponse = await axios.get(`https://${DOMAIN}/api/v2/users/${user.sub}/roles`, {
                 headers: {
@@ -321,11 +324,11 @@ function App() {
     try {
       const token = await getAccessTokenSilently()
       await axios.post(
-        `${apiUrl}/fixtures/discount`,
+        `${apiUrl}/fixtures/${user.sub}/discount`,
         { discount: discountPercentage },
         {
           headers: {
-            Authorization: `Bearer ${token}`
+            Authorization: `Bearer ${RolesToken}`
           }
         }
       );
