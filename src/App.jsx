@@ -57,23 +57,54 @@ function App() {
     }
   };
 
-  const handleAuctionQuantityChange = async (e, fixture) => {
+  const handleConfirmPurchase = (fixture) => {
+    // revisar si tengo fondos suficientes
+    let amount;
+    if (showReservedFixtures) {
+      console.log(fixture.result)
+      setResult(fixture.result);
+      amount = quantity * 1000 * (1 - selectedFixture.discount);
+    } else {
+      amount = quantity * 1000;
+    }
+
+    if (walletBalance < amount) {
+      alert('Fondos insuficientes');
+      return;
+    }
+    
+    buyBonus(selectedFixture, result, quantity);
+    localStorage.setItem('isReserving', isReserving);
+    setShowBuyModal(false);
+    setIsReserving(false); // Resetear el estado después de confirmar
+  };
+
+  const handleAuctionQuantityChange = async (e, fixtureId, result, bonos_disponibles) => {
+    console.log(fixtureId);
+    console.log(result);
+
     const quantity = parseInt(e.target.value, 10);
-    if (quantity < 0 || quantity > fixture.bonos_reservados) {
+    const key = `${fixtureId}-${result}`;
+
+    if (quantity < 0 || quantity > bonos_disponibles) {
       alert('La cantidad debe estar entre 0 y los bonos reservados disponibles.');
       return;
     }
-    setAuctionQuantities({...auctionQuantities, [fixture.fixture_id]: quantity});
+    setAuctionQuantities({...auctionQuantities, [key]: quantity});
   };
 
   const handleAuctionBonusClick = async (fixture) => {
-    const quantity = auctionQuantities[fixture.fixture_id];
-    if (!quantity || quantity <= 0 || quantity > fixture.bonos_reservados) {
+    const fixtureId = fixture.fixture_id;
+    const result = fixture.result || "---";
+    const bonos_reservados = fixture.bonos;
+    const key = `${fixtureId}-${result}`;
+    const quantity = auctionQuantities[key];
+    if (!quantity || quantity <= 0 || quantity > bonos_reservados) {
       alert('Por favor, ingresa una cantidad válida para subastar.');
       return;
     }
-    if (quantity > fixture.bonos_reservados) {
-      alert(`No puedes subastar más de ${fixture.bonos_reservados} bonos reservados.`);
+    if (quantity > bonos_reservados) {
+      alert(`No puedes subastar más de ${bonos_reservados} bonos reservados.`);
       return;
     }
     // Lógica para manejar la subasta
@@ -84,12 +115,12 @@ function App() {
       const roles_token = localStorage.getItem("RolesToken");
       console.log(roles_token)
       const response = await axios.post(
-        `${process.env.REACT_APP_API_URL}/fixtures/${fixture.fixture_id}/auction/${user.sub}`,
+        `${process.env.REACT_APP_API_URL}/fixtures/${fixtureId}/auction/${user.sub}`,
         {
           league_name: fixture.league_name,
           round: fixture.league_round,
           result: fixture.result || "---",
-          quantity: auctionQuantities[fixture.fixture_id]
+          quantity: quantity
         },
         {
           headers: {
@@ -102,7 +133,6 @@ function App() {
       console.error("Error iniciando la subasta:", error);
       alert("Ocurrió un error al iniciar la subasta.");
     }
-
   };
 
   const buyBonus = async (fixture, result, quantity) => {
@@ -116,6 +146,7 @@ function App() {
     try {
       const token = await getAccessTokenSilently();
       console.log("mira tu")
+      console.log(result);
       const response = await axios.post(
         `${apiUrl}/fixtures/${fixture.fixture_id}/compra`, 
         { 
@@ -136,12 +167,19 @@ function App() {
       console.log("url:", response.data.url)
       console.log('token:', response.data.token)
 
+      let amount;
+      if (fixture.discount) {
+        amount = quantity * 1000 * (1 - selectedFixture.discount);
+      } else {
+        amount = quantity * 1000;
+      }
+
       if (response.data.url && response.data.token) { 
         navigate('/confirm-purchase', {
           state: {
             url: response.data.url,
             token: response.data.token,
-            amount: quantity,
+            amount: amount,
             fixture: fixture,
             result: result,
             locationInfo: response.data.location,
@@ -264,7 +302,17 @@ function App() {
         const fetchedFixtures = await fetchFixtures(getAccessTokenSilently, showReservedFixtures);
         console.log("Fixtures cargadas:", fetchedFixtures);
         setFixtures(fetchedFixtures);
-        setFilteredFixtures(fetchedFixtures);
+        if (showReservedFixtures === "false")
+        {
+          setFilteredFixtures(fetchedFixtures);
+        }
+        if (showReservedFixtures && selectedFixture) {
+          const updatedFixture = fetchedFixtures.find(f => f.fixture_id === selectedFixture.fixture_id);
+          if (updatedFixture) {
+            setSelectedFixture(updatedFixture);
+          }
+        }
+        
       } catch (error) {
         console.error("Error en loadFixtures:", error);
       }
@@ -331,8 +379,8 @@ function App() {
     localStorage.removeItem('role');
 
     // Llamar a la función logout
-    // logout({ returnTo: window.location.origin });
-    logout({ returnTo: 'http://localhost:4000/' }); // debugging
+    logout({ returnTo: window.location.origin });
+    // logout({ returnTo: 'http://localhost:4000/' }); // debugging
 
   };
 
@@ -359,13 +407,6 @@ function App() {
     setRecommendation(result); 
   };
 
-  const handleConfirmPurchase = () => {
-    buyBonus(selectedFixture, result, quantity);
-    localStorage.setItem('isReserving', isReserving);
-    setShowBuyModal(false);
-    setIsReserving(false); // Resetear el estado después de confirmar
-  };
-
   const handleActivateDiscount = async () => {
     if (discountPercentage < 0 || discountPercentage > 10) {
       alert('Discount percentage must be between 0 and 10.');
@@ -382,11 +423,34 @@ function App() {
             Authorization: `Bearer ${RolesToken}`
           }
         }
-      );
+      );// Refrescar fixtures reservadas
+      if (showReservedFixtures) {
+        const fetchedFixtures = await fetchFixtures(getAccessTokenSilently, true);
+        setFixtures(fetchedFixtures);
+        setFilteredFixtures(fetchedFixtures);
+      }
       alert('Descuento aplicado exitosamente');
     } catch (error) {
       console.error('Error al aplicar descuento:', error);
       alert('Error al aplicar descuento');
+    }
+  };
+
+  const getBetResult = (fixture) => {
+    if (!fixture.result) return 'Resultado desconocido';
+    
+    const result = fixture.result.toLowerCase();
+    
+    switch(result) {
+      case 'home':
+        return fixture.home_team_name;
+      case 'away':
+        return fixture.away_team_name;
+      case 'draw':
+      case 'drew':
+        return 'Empate';
+      default:
+        return 'Resultado desconocido';
     }
   };
 
@@ -430,16 +494,20 @@ function App() {
                         className="my-requests-button">
                         My Requests
                       </button>
+                      {localStorage.getItem('role') === 'Admin' && (
                       <button
                         onClick={() => navigate('/view-offers')}
                         className="my-requests-button">
                         View Offers
                       </button>
+                      )}
+                      {localStorage.getItem('role') === 'Admin' && (
                       <button
                         onClick={() => navigate('/view-proposals')}
                         className="my-requests-button">
                         View Proposals
                       </button>
+                      )}
                     </div>
                     <div className="worker-status">
                       <p>
@@ -536,7 +604,7 @@ function App() {
             <div className="fixtures-grid">
               {currentFixtures.length > 0 ? (
                 currentFixtures.map((fixture) => (
-                  <div key={fixture.fixture_id} className="fixture-item">
+                  <div key={`${fixture.fixture_id}-${fixture.result}`} className="fixture-item">
                     <div className="league-info">
                       <p>{fixture.league_name}</p>
                     </div>
@@ -565,46 +633,65 @@ function App() {
                         {new Date(fixture.date).toLocaleTimeString()}
                       </p>
                     </div>
+              
                     <div className="fixture-odds">
-                      {fixture.odds &&
+                      {Array.isArray(fixture.odds) && fixture.odds.length > 0 && fixture.odds[0].name !== "No odd" ? (
                         fixture.odds.map((odd, index) => (
                           <div key={index} className="odds-info">
                             <div className="odds-values">
-                              {odd.values.map((valueObj, valueIndex) => (
-                                <div key={valueIndex} className="odds-value">
-                                  <p>{valueObj.value}</p>
-                                  <p>{valueObj.odd}</p>
-                                </div>
-                              ))}
+                              {odd.values && odd.values.length > 0 ? (
+                                odd.values.map((valueObj, valueIndex) => (
+                                  <div key={valueIndex} className="odds-value">
+                                    <p>{valueObj.value}</p>
+                                    <p>{valueObj.odd}</p>
+                                  </div>
+                                ))
+                              ) : (
+                                <p>No odds available</p>
+                              )}
                             </div>
                           </div>
-                        ))}
+                        ))
+                      ) : (
+                        <p className="no-odds">No odds available</p>
+                      )}
                     </div>
-                    <div className="bonos-info">Bonos: {showReservedFixtures === true ? fixture.bonos_reservados : fixture.bonos}</div>
+                    
+                    <div className="bonos-info">
+                      Bonos: {fixture.bonos}
+                    </div>
+                    
+                    {/* Nueva sección para mostrar el resultado de la apuesta */}
+                    {showReservedFixtures && (
+                      <div className="fixture-bet-result">
+                        <p>Apuesta a: {getBetResult(fixture)}</p>
+                      </div>
+                    )}
+                    
                     <button
                       onClick={() => handleBuyBonusClick(fixture)}
                       className="buy-button">
                       Purchase
                     </button>
-                    {localStorage.getItem("role") === "Admin" && (showReservedFixtures === true ) && (
-                    <div className="auction-container">
-                      <input
-                        type="number"
-                        min="1"
-                        max={fixture.bonos_reservados}
-                        placeholder="Cantidad de bonos"
-                        value={auctionQuantities[fixture.fixture_id] || ""}
-                        onChange={(e) => handleAuctionQuantityChange(e, fixture)}
-                        className="auction-input"
-                      />
-                      <button
-                        onClick={() => handleAuctionBonusClick(fixture)}
-                        className="buy-button">
-                        Auction
-                      </button>
-                    </div>
-                  )}
-
+                    
+                    {localStorage.getItem("role") === "Admin" && showReservedFixtures === true && (
+                      <div className="auction-container">
+                        <input
+                          type="number"
+                          min="1"
+                          max={fixture.bonos}
+                          placeholder="Cantidad de bonos"
+                          value={auctionQuantities[`${fixture.fixture_id}-${fixture.result}`] || 0}
+                          onChange={(e) => handleAuctionQuantityChange(e, fixture.fixture_id, fixture.result, fixture.bonos)}
+                          className="auction-input"
+                        />
+                        <button
+                          onClick={() => handleAuctionBonusClick(fixture)}
+                          className="buy-button">
+                          Subastar
+                        </button>
+                      </div>
+                    )}
                   </div>
                 ))
               ) : (
@@ -660,27 +747,33 @@ function App() {
                           className="modal-checkbox"/>
                       </label>
                     )}
-                    <label className="modal-label">
-                      <p>Resultado:</p>
-                      <select
-                        value={result}
-                        onChange={(e) => setResult(e.target.value)}
-                        className="modal-select">
-                        <option value="home">Home</option>
-                        <option value="away">Away</option>
-                        <option value="draw">Draw</option>
-                      </select>
-                    </label>
+                    {showReservedFixtures ? (
+                      <div className="result-info">
+                        <p><strong>Resultado: </strong>{selectedFixture.result === "home" ? selectedFixture.home_team_name : selectedFixture.result === "away" ? selectedFixture.away_team_name : "Empate"}</p>
+                      </div>
+                    ) : (
+                      <label className="modal-label">
+                        <p>Resultado:</p>
+                        <select
+                          value={result}
+                          onChange={(e) => setResult(e.target.value)}
+                          className="modal-select">
+                          <option value="home">Home</option>
+                          <option value="away">Away</option>
+                          <option value="draw">Draw</option>
+                        </select>
+                      </label>
+                    )}
                     <div className="price-info">
-                      <p>Precio: ${showReservedFixtures ? quantity * 1000 * (1 - selectedFixture.admin_bonos_discount) : quantity*1000}</p>
-                      {(showReservedFixtures === true) && (selectedFixture.admin_bonos_discount > 0) && (
-                        <h4>{100 * selectedFixture.admin_bonos_discount}% de descuento!</h4>
+                      <p>Precio: ${showReservedFixtures ? quantity * 1000 * (1 - selectedFixture.discount) : quantity*1000}</p>
+                      {(showReservedFixtures === true) && (selectedFixture.discount > 0) && (
+                        <h4>{100 * selectedFixture.discount}% de descuento!</h4>
                       )}
                     </div>
                   </div>
                   <div className="modal-footer">
                     <button
-                      onClick={handleConfirmPurchase}
+                      onClick={() => handleConfirmPurchase(selectedFixture)}
                       className="modal-button confirm-button">
                       Confirmar Compra
                     </button>

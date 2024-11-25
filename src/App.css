@@ -515,4 +515,21 @@
   color: #910101;
 }
 
+.fixture-bet-result {
+  margin-top: 10px;
+  padding: 10px;
+  background-color: #f0f8ff; /* Color de fondo suave */
+  border-radius: 5px;
+}
 
+.fixture-bet-result p {
+  margin: 0;
+  font-weight: bold;
+  color: #333;
+}
+
+.result-info p{
+  font-size: 1rem;
+  color: #333;
+  margin-bottom: 10px;
+}
