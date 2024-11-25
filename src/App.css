@@ -320,10 +320,40 @@
   border-radius: 0 15px 15px 0;
   padding: 20px 10px;
   z-index: 1000;
-  transition: transform 0.3s ease-in-out;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  overflow-y: auto; /* Para habilitar el desplazamiento */
+  transition: transform 0.3s ease-in-out;
+  max-height: 100vh; /* No excede la pantalla */
+  direction: rtl; /* Cambiar la dirección para que el scrollbar aparezca a la izquierda */
+}
+
+.external-toggle-button {
+  position: fixed;
+  top: 5%;
+  left: 10px; /* Justo al lado del contenedor cerrado */
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: none;
+  background: #898989;
+  color: #fff;
+  cursor: pointer;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1001;
+  transition: left 0.3s ease-in-out;
+}
+
+.external-toggle-button.open {
+  left: 310px; /* Ajustar la posición cuando el contenedor está abierto */
+}
+
+.external-toggle-button:hover {
+  background: #3e3e3e;
 }
 
 .user-info-container.open {
@@ -343,23 +373,6 @@
 .user-info h3,
 .user-info p {
   color: #333;
-}
-
-.toggle-button {
-  position: absolute;
-  top: 10px;
-  right: -30px; /* Posicionado fuera del contenedor */
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  border: none;
-  background: #007bff;
-  color: #fff;
-  cursor: pointer;
-  font-size: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
 .user-content {
@@ -502,22 +515,4 @@
   color: #910101;
 }
 
-.toggle-button {
-  position: absolute;
-  top: 50%;
-  right: -20px;
-  background: #898989;
-  color: #fff;
-  padding: 8px;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: bold;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-  transition: background 0.3s ease;
-}
 
-.toggle-button:hover {
-  background: #3e3e3e;
-}

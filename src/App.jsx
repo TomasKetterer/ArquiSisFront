@@ -10,6 +10,7 @@ import {
   signUpUser,
   addMoneyToWallet as addMoneyService
 } from './services/apiService.jsx';
+import { v4 as uuidv4 } from 'uuid';
 
 import { 
   madeRecommendations
@@ -18,8 +19,10 @@ import {
 function App() {
   const { loginWithRedirect, logout, isAuthenticated, user, getAccessTokenSilently } = useAuth0();
   const [role, setRole] = useState("user");
+  const [RolesToken, setRolesToken] = useState(null);
   const [isReserving, setIsReserving] = useState(false);
   const [fixtures, setFixtures] = useState([]);
+  const [auctionQuantities, setAuctionQuantities] = useState({});
   const [filteredFixtures, setFilteredFixtures] = useState([]);
   const [showReservedFixtures, setShowReservedFixtures] = useState(false);
   const [discountPercentage, setDiscountPercentage] = useState(0);
@@ -52,6 +55,54 @@ function App() {
     } else {
       setShowAddMoneyModal(true);
     }
+  };
+
+  const handleAuctionQuantityChange = async (e, fixture) => {
+    const quantity = parseInt(e.target.value, 10);
+    if (quantity < 0 || quantity > fixture.bonos_reservados) {
+      alert('La cantidad debe estar entre 0 y los bonos reservados disponibles.');
+      return;
+    }
+    setAuctionQuantities({...auctionQuantities, [fixture.fixture_id]: quantity});
+  };
+
+  const handleAuctionBonusClick = async (fixture) => {
+    const quantity = auctionQuantities[fixture.fixture_id];
+    if (!quantity || quantity <= 0 || quantity > fixture.bonos_reservados) {
+      alert('Por favor, ingresa una cantidad válida para subastar.');
+      return;
+    }
+    if (quantity > fixture.bonos_reservados) {
+      alert(`No puedes subastar más de ${fixture.bonos_reservados} bonos reservados.`);
+      return;
+    }
+    // Lógica para manejar la subasta
+    console.log(`Subastar ${quantity} bonos`);
+
+    try {
+      const token = await getAccessTokenSilently();
+      const roles_token = localStorage.getItem("RolesToken");
+      console.log(roles_token)
+      const response = await axios.post(
+        `${process.env.REACT_APP_API_URL}/fixtures/${fixture.fixture_id}/auction/${user.sub}`,
+        {
+          league_name: fixture.league_name,
+          round: fixture.league_round,
+          result: fixture.result || "---",
+          quantity: auctionQuantities[fixture.fixture_id]
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${roles_token}`,
+          },
+        }
+      );
+      alert("Subasta iniciada con éxito");
+    } catch (error) {
+      console.error("Error iniciando la subasta:", error);
+      alert("Ocurrió un error al iniciar la subasta.");
+    }
+
   };
 
   const buyBonus = async (fixture, result, quantity) => {
@@ -123,6 +174,9 @@ function App() {
             const DOMAIN = process.env.REACT_APP_AUTH0_DOMAIN;
             const ROLES_TOKEN = await getRolesToken();
             console.log('roles token:', ROLES_TOKEN);
+            localStorage.setItem('RolesToken', ROLES_TOKEN)
+            setRolesToken(ROLES_TOKEN);
+            console.log(user.sub)
             try{
               const rolesResponse = await axios.get(`https://${DOMAIN}/api/v2/users/${user.sub}/roles`, {
                 headers: {
@@ -277,8 +331,8 @@ function App() {
     localStorage.removeItem('role');
 
     // Llamar a la función logout
-    logout({ returnTo: window.location.origin });
-    // logout({ returnTo: 'http://localhost:3000/' }); // debugging
+    // logout({ returnTo: window.location.origin });
+    logout({ returnTo: 'http://localhost:4000/' }); // debugging
 
   };
 
@@ -321,11 +375,11 @@ function App() {
     try {
       const token = await getAccessTokenSilently()
       await axios.post(
-        `${apiUrl}/fixtures/discount`,
+        `${apiUrl}/fixtures/${user.sub}/discount`,
         { discount: discountPercentage },
         {
           headers: {
-            Authorization: `Bearer ${token}`
+            Authorization: `Bearer ${RolesToken}`
           }
         }
       );
@@ -341,80 +395,91 @@ function App() {
   <header className="App-header">
     {isAuthenticated ? (
       <>
-        <div
-          className={`user-info-container ${isUserModalOpen ? 'open' : 'closed'}`}>
+        <div className={`user-info-container ${isUserModalOpen ? 'open' : 'closed'}`}>
           <div className="user-info">
-            <button
-              className="toggle-button"
-              onClick={() => setIsUserModalOpen(!isUserModalOpen)}>
-              {isUserModalOpen ? '<' : '>'}
-            </button>
             {isUserModalOpen && (
               <>
-              <div className="user-content">
-                <div className="user-details">
-                  <img
-                    src={user.picture}
-                    alt={user.name}
-                    className="user-picture"
-                  />
-                  <h3>User Information</h3>
-                  <p>
-                    Welcome, {user.name}
-                    <br />
-                    isAdmin?{' '}
-                    {localStorage.getItem('role') === 'Admin' ? 'true' : 'false'}
-                  </p>
-                  <button onClick={handleLogout} className="logout-button">
-                    Log Out
-                  </button>
-                  <div className="wallet-balance">
-                    <p>Wallet Balance: ${walletBalance}</p>
-                    <button
-                      onClick={handleAddMoneyToWallet}
-                      className="add-money-button">
-                      Add Money to Wallet
-                    </button>
-                  </div>
-                  <div className="bonuses-section">
-                    <button
-                      onClick={redirectToMyRequests}
-                      className="my-requests-button">
-                      My Requests
-                    </button>
-                  </div>
-                  <div className="worker-status">
+                <div className="user-content">
+                  <div className="user-details">
+                    <img
+                      src={user.picture}
+                      alt={user.name}
+                      className="user-picture"
+                    />
+                    <h3>User Information</h3>
                     <p>
-                      Worker Status: {workerAvailable ? 'Available' : 'Unavailable'}
+                      Welcome, {user.name}
+                      <br />
+                      isAdmin?{' '}
+                      {localStorage.getItem('role') === 'Admin' ? 'true' : 'false'}
                     </p>
-                  </div>
-                </div>
-                {localStorage.getItem('role') === "Admin" && (
-                  <div className="admin-discount-section">
-                    <h3>Activar Descuento para Bonos Reservados</h3>
-                    <label className="discount-label">
-                      Porcentaje (0% - 10%):
-                      <input
-                        type="number"
-                        min="0"
-                        max="10"
-                        value={discountPercentage}
-                        onChange={(e) => setDiscountPercentage(e.target.value)}
-                        className="discount-input"
-                      />
-                    </label>
-                    <button
-                      onClick={handleActivateDiscount}
-                      className="activate-discount-button">
-                      Aplicar Descuento
+                    <button onClick={handleLogout} className="logout-button">
+                      Log Out
                     </button>
+                    <div className="wallet-balance">
+                      <p>Wallet Balance: ${walletBalance}</p>
+                      <button
+                        onClick={handleAddMoneyToWallet}
+                        className="add-money-button">
+                        Add Money to Wallet
+                      </button>
+                    </div>
+                    <div className="bonuses-section">
+                      <button
+                        onClick={redirectToMyRequests}
+                        className="my-requests-button">
+                        My Requests
+                      </button>
+                      <button
+                        onClick={() => navigate('/view-offers')}
+                        className="my-requests-button">
+                        View Offers
+                      </button>
+                      <button
+                        onClick={() => navigate('/view-proposals')}
+                        className="my-requests-button">
+                        View Proposals
+                      </button>
+                    </div>
+                    <div className="worker-status">
+                      <p>
+                        Worker Status: {workerAvailable ? 'Available' : 'Unavailable'}
+                      </p>
+                    </div>
                   </div>
-                )}
-              </div>
+                  {localStorage.getItem('role') === "Admin" && (
+                    <div className="admin-discount-section">
+                      <h3>Activar Descuento para Bonos Reservados</h3>
+                      <label className="discount-label">
+                        Porcentaje (0% - 10%):
+                        <input
+                          type="number"
+                          min="0"
+                          max="10"
+                          value={discountPercentage}
+                          onChange={(e) => setDiscountPercentage(e.target.value)}
+                          className="discount-input"
+                        />
+                      </label>
+                      <button
+                        onClick={handleActivateDiscount}
+                        className="activate-discount-button">
+                        Aplicar Descuento
+                      </button>
+                    </div>
+                  )}
+                </div>
               </>
             )}
           </div>
         </div>
+
+        <button
+          className={`external-toggle-button ${isUserModalOpen ? 'open' : 'closed'}`}
+          onClick={() => setIsUserModalOpen(!isUserModalOpen)}
+        >
+          {isUserModalOpen ? '<' : '>'}
+        </button>
 
             
         <div className="filters-container">
@@ -521,6 +586,25 @@ function App() {
                       className="buy-button">
                       Purchase
                     </button>
+                    {localStorage.getItem("role") === "Admin" && (showReservedFixtures === true ) && (
+                    <div className="auction-container">
+                      <input
+                        type="number"
+                        min="1"
+                        max={fixture.bonos_reservados}
+                        placeholder="Cantidad de bonos"
+                        value={auctionQuantities[fixture.fixture_id] || ""}
+                        onChange={(e) => handleAuctionQuantityChange(e, fixture)}
+                        className="auction-input"
+                      />
+                      <button
+                        onClick={() => handleAuctionBonusClick(fixture)}
+                        className="buy-button">
+                        Auction
+                      </button>
+                    </div>
+                  )}
+
                   </div>
                 ))
               ) : (

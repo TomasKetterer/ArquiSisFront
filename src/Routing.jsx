@@ -7,6 +7,8 @@ import App from './App.jsx';
 import ConfirmPurchase from './components/ConfirmPurchase.jsx';
 import PurchaseCompleted from './components/PurchaseCompleted.jsx';
 import MyRequests from './components/MyRequests.jsx';
+import ViewOffers from './components/ViewOffers';
+import ViewProposals from './components/ViewProposals';
 
 function Routing () {
     return (
@@ -25,6 +27,8 @@ function Routing () {
                     <Route path="/confirm-purchase" element={<ConfirmPurchase />} />
                     <Route path="/purchase-completed" element={<PurchaseCompleted />} />
                     <Route path="/my-requests" element={<MyRequests />} />
+                    <Route path="/view-offers" element={<ViewOffers />} />
+                    <Route path="/view-proposals" element={<ViewProposals />} />
                 </Routes>
             </BrowserRouter>
         </Auth0Provider>

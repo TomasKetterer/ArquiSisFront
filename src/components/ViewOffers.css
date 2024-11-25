@@ -1,0 +1,178 @@
+/* Estilos generales para la página ViewOffers */
+.view-offers-page {
+    text-align: center;
+    background: linear-gradient(to right, #1e3c72, #2a5298);
+    min-height: 100vh;
+    padding: 20px;
+    color: white;
+  }
+  
+  .view-offers-page h1 {
+    margin-bottom: 30px;
+    font-size: 2.5rem;
+    color: #fff;
+  }
+  
+  .view-offers-page h2,
+  .view-offers-page h3 {
+    color: #fff;
+    margin-bottom: 20px;
+  }
+  
+  .auction-item {
+    background: #fff;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    text-align: center;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+  
+  .auction-item p {
+    margin: 5px 0;
+    font-size: 1rem;
+    color: #000;
+  }
+  
+  .auction-item strong {
+    font-weight: bold;
+  }
+  
+  .auction-item button {
+    margin-top: 15px;
+    padding: 10px 20px;
+    background: #28a745;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background 0.3s ease;
+  }
+  
+  .auction-item button:hover {
+    background: #218838;
+  }
+  
+  .proposal-form {
+    background: #f8f9fa;
+    color: #333;
+    border-radius: 12px;
+    padding: 20px;
+    margin-top: 30px;
+    text-align: left;
+  }
+  
+  .proposal-form h2,
+  .proposal-form h3 {
+    color: #333;
+  }
+  
+  .proposal-form label {
+    display: block;
+    margin-bottom: 15px;
+    font-size: 1rem;
+  }
+  
+  .proposal-form select,
+  .proposal-form input[type="number"] {
+    width: 100%;
+    padding: 10px;
+    margin-top: 5px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 1rem;
+  }
+  
+  .proposal-form button {
+    padding: 10px 20px;
+    margin-right: 10px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: bold;
+    transition: background 0.3s ease;
+  }
+  
+  .proposal-form button:first-of-type {
+    background: #007bff;
+    color: #fff;
+  }
+  
+  .proposal-form button:first-of-type:hover {
+    background: #0056b3;
+  }
+  
+  .proposal-form button:last-of-type {
+    background: #f44336;
+    color: #fff;
+  }
+  
+  .proposal-form button:last-of-type:hover {
+    background: #e41e26;
+  }
+  
+  .no-offers-message,
+  .access-message {
+    font-size: 1.2rem;
+    color: #fff;
+    margin-top: 50px;
+  }
+
+  .offers-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    padding: 20px;
+  }
+
+  .modal-content {
+    width: 600px; /* Ajusta el ancho del modal */
+    max-height: 80vh; /* Evita que el modal exceda el alto de la ventana */
+    overflow-y: auto; /* Permite desplazamiento si el contenido es largo */
+    color: #000;
+  }
+  
+  .modal-content h2 {
+    font-size: 1.8rem;
+    margin-bottom: 20px;
+    color: #333;
+  }
+  
+  .modal-content h3 {
+    font-size: 1.8rem;
+    margin-bottom: 20px;
+    color: #333;
+  }
+
+  .modal-footer {
+    margin-top: 20px;
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+  }
+  
+  .modal-footer button {
+    flex: 1;
+    margin: 0 10px;
+  }
+  
+  
+  @media (max-width: 768px) {
+    .auction-item,
+    .proposal-form {
+      padding: 15px;
+    }
+  
+    .auction-item button,
+    .proposal-form button {
+      width: 100%;
+      margin-top: 10px;
+    }
+  }
+  
