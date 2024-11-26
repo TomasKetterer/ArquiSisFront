@@ -10,7 +10,6 @@ import {
   signUpUser,
   addMoneyToWallet as addMoneyService
 } from './services/apiService.jsx';
-import { v4 as uuidv4 } from 'uuid';
 
 import { 
   madeRecommendations
@@ -18,7 +17,6 @@ import {
 
 function App() {
   const { loginWithRedirect, logout, isAuthenticated, user, getAccessTokenSilently } = useAuth0();
-  const [role, setRole] = useState("user");
   const [RolesToken, setRolesToken] = useState(null);
   const [isReserving, setIsReserving] = useState(false);
   const [fixtures, setFixtures] = useState([]);
@@ -111,10 +109,9 @@ function App() {
     console.log(`Subastar ${quantity} bonos`);
 
     try {
-      const token = await getAccessTokenSilently();
       const roles_token = localStorage.getItem("RolesToken");
       console.log(roles_token)
-      const response = await axios.post(
+      await axios.post(
         `${process.env.REACT_APP_API_URL}/fixtures/${fixtureId}/auction/${user.sub}`,
         {
           league_name: fixture.league_name,
@@ -222,7 +219,6 @@ function App() {
                 }
               });
               const roles = rolesResponse.data.map((role) => role.name);
-              setRole(roles);
               localStorage.setItem('role', roles);
             } catch (error) {
               console.error("Error al obtener roles:", error.response?.data || error.message);
@@ -318,7 +314,7 @@ function App() {
       }
     };
     loadFixtures();
-  }, [showReservedFixtures]);
+  }, [showReservedFixtures, selectedFixture, getAccessTokenSilently]);
   
   
   // UseEffect para aplicar los filtros
@@ -379,8 +375,8 @@ function App() {
     localStorage.removeItem('role');
 
     // Llamar a la función logout
-    logout({ returnTo: window.location.origin });
-    // logout({ returnTo: 'http://localhost:4000/' }); // debugging
+    // logout({ returnTo: window.location.origin });
+    logout({ returnTo: 'http://localhost:4000/' }); // debugging
 
   };
 
@@ -414,7 +410,6 @@ function App() {
     }
 
     try {
-      const token = await getAccessTokenSilently()
       await axios.post(
         `${apiUrl}/fixtures/${user.sub}/discount`,
         { discount: discountPercentage },
@@ -549,29 +544,38 @@ function App() {
           {isUserModalOpen ? '<' : '>'}
         </button>
 
-            
         <div className="filters-container">
           <h3 className="filters-title">Filters</h3>
           <div className="filters">
             <div className="filter-group">
               <label htmlFor="filter-home" className="filter-label">Home Team</label>
-              <input
+              <select
                 id="filter-home"
-                type="text"
-                placeholder="Filter by home team"
                 value={filters.home}
                 onChange={(e) => setFilters({ ...filters, home: e.target.value })}
-                className="filter-input"/>
+                className="filter-dropdown">
+                <option value="">All Teams</option>
+                {Array.from(new Set(fixtures.map((fixture) => fixture.home_team_name)))
+                  .sort()
+                  .map((team, index) => (
+                    <option key={index} value={team}>{team}</option>
+                  ))}
+              </select>
             </div>
             <div className="filter-group">
               <label htmlFor="filter-away" className="filter-label">Away Team</label>
-              <input
+              <select
                 id="filter-away"
-                type="text"
-                placeholder="Filter by away team"
                 value={filters.away}
                 onChange={(e) => setFilters({ ...filters, away: e.target.value })}
-                className="filter-input"/>
+                className="filter-dropdown">
+                <option value="">All Teams</option>
+                {Array.from(new Set(fixtures.map((fixture) => fixture.away_team_name)))
+                  .sort()
+                  .map((team, index) => (
+                    <option key={index} value={team}>{team}</option>
+                  ))}
+              </select>
             </div>
             <div className="filter-group">
               <label htmlFor="filter-date" className="filter-label">Date</label>
@@ -580,15 +584,18 @@ function App() {
                 type="date"
                 value={filters.date}
                 onChange={(e) => setFilters({ ...filters, date: e.target.value })}
-                className="filter-input"/>
+                className="filter-input" />
             </div>
           </div>
-        </div>
-
             <div className="recommendation-section">
-              <button onClick={() => makeRecommendations()} className="recommendation-button">
-                Ask for Recommendation
-              </button>
+              <div className="buttons-section">
+                <button onClick={() => makeRecommendations()} className="recommendation-button">
+                  Ask for Recommendation
+                </button>
+                <button onClick={() => setShowReservedFixtures(!showReservedFixtures)} className='recommendation-button'>
+                  {showReservedFixtures ? 'Ver Fixtures Generales' : 'Ver Fixtures Reservados'}
+                </button>
+              </div>
               {recommendation && (
                 <div className="recommendation-result">
                   <h3>Recommendation:</h3>
@@ -596,10 +603,9 @@ function App() {
                 </div>
               )}
             </div>
+        </div>
 
-            <button onClick={() => setShowReservedFixtures(!showReservedFixtures)} className='recommendation-button'>
-              {showReservedFixtures ? 'Ver Fixtures Generales' : 'Ver Fixtures Reservados'}
-            </button>
+
 
             <div className="fixtures-grid">
               {currentFixtures.length > 0 ? (
@@ -824,10 +830,12 @@ function App() {
           </>
         ) : (
           <div className="welcome-container">
-            <h1>Welcome to NodeCraft</h1>
-            <p>Your ultimate destination for football fixtures and more!</p>
-            <button onClick={handleLogInClick}>Log In</button>
-            <button onClick={handleSignUpClick}>Sign Up</button>
+            <h1><span className="highlight">NodeCraft</span></h1>
+            <p className="tag">Your ultimate destination for football fixtures and more!</p>
+            <div className="welcome-buttons">
+              <button className="welcome-button" onClick={handleLogInClick} aria-label="Log In to NodeCraft">Log In</button>
+              <button className="welcome-button secondary" onClick={handleSignUpClick} aria-label="Sign Up for NodeCraft">Sign Up</button>
+            </div>
           </div>
         )}
       </header>

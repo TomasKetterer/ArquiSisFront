@@ -32,7 +32,8 @@ async function Recommendations(data) {
 //}
 
 async function madeRecommendations(id) {
-    const job = await postRecomendations(id);
+    // Assign Job
+    await postRecomendations(id);
     const data = await getRecomendations(id);
     const result = await Recommendations(data);
     return result;

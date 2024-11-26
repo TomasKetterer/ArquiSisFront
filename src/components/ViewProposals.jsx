@@ -6,7 +6,7 @@ import '../App.css';
 import { useNavigate } from 'react-router-dom';
 
 const ViewProposals = () => {
-  const { isAuthenticated, user, getAccessTokenSilently } = useAuth0();
+  const { isAuthenticated, user } = useAuth0();
   const [receivedProposals, setReceivedProposals] = useState([]);
   const [selectedProposal, setSelectedProposal] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -24,13 +24,9 @@ const ViewProposals = () => {
   }, []);
 
   // Función para obtener las propuestas recibidas
+  // eslint-disable-next-line
   const fetchReceivedProposals = async () => {
     try {
-      const token = await getAccessTokenSilently({
-        audience: process.env.REACT_APP_AUTH0_AUDIENCE,
-        scope: "openid profile email offline_access"
-      });
-
       const response = await axios.get(`${apiUrl}/proposals/received/${user.sub}`, {
         headers: {
           Authorization: `Bearer ${roles_token}`
@@ -47,12 +43,14 @@ const ViewProposals = () => {
   };
 
   // useEffect para cargar las propuestas al montar el componente
+  // eslint-disable-next-line
   useEffect(() => {
     if (isAdmin && isAuthenticated) {
       fetchReceivedProposals();
     } else {
       setIsLoading(false);
     }
+  // eslint-disable-next-line
   }, [isAdmin, isAuthenticated]);
 
   // Función para manejar la selección de una propuesta
@@ -79,11 +77,6 @@ const ViewProposals = () => {
     };
 
     try {
-      const token = await getAccessTokenSilently({
-        audience: process.env.REACT_APP_AUTH0_AUDIENCE,
-        scope: "openid profile email offline_access"
-      });
-
       // Publicar la respuesta a través del endpoint /mqtt/publish-response
       const response = await axios.post(`${apiUrl}/proposals/${proposal_id}/respond/${user.sub}`, responseMessage, {
         headers: {
@@ -103,37 +96,6 @@ const ViewProposals = () => {
     } catch (error) {
       console.error(`Error al responder la propuesta (${type}):`, error);
       alert(`Error al ${type === 'acceptance' ? 'aceptar' : 'rechazar'} la propuesta.`);
-    }
-  };
-
-  // Función para actualizar el estado de bonos reservados tras la aceptación
-  const updateBonosReservados = async (proposal, type) => {
-    if (type === 'acceptance') {
-      try {
-        const token = await getAccessTokenSilently({
-          audience: process.env.REACT_APP_AUTH0_AUDIENCE,
-          scope: "openid profile email offline_access"
-        });
-
-        // Actualizar bonos reservados en el backend
-        const response = await axios.patch(`${apiUrl}/bonos-reservados/update`, {
-          fixture_id: proposal.fixture_id,
-          quantity: proposal.quantity,
-          type: type
-        }, {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        });
-
-        if (response.status === 200) {
-          console.log('Bonos reservados actualizados correctamente.');
-        } else {
-          console.error('Error al actualizar bonos reservados.');
-        }
-      } catch (error) {
-        console.error('Error al actualizar bonos reservados:', error);
-      }
     }
   };
 

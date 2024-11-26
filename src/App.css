@@ -1,6 +1,6 @@
 .App {
   text-align: center;
-  background: linear-gradient(to right, #1e3c72, #2a5298);
+  background: linear-gradient(0, #0d2247, #1e3c72);
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -29,6 +29,62 @@
   margin-bottom: 20px;
   box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
   border: 3px solid white;
+}
+
+.welcome-container {
+  text-align: center;
+  padding: 40px;
+}
+
+.welcome-container h1 .highlight {
+  font-size: 3rem;
+  font-weight: 700;
+  margin-bottom: 15px;
+  color: #ffcf4a;
+  background: linear-gradient(to right, #ffcf4a, #ff9f00);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.tag {
+  font-size: 1.5rem;
+  font-weight: 800;
+  margin-bottom: 30px;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.welcome-buttons {
+  display: flex;
+  justify-content: center;
+}
+
+.welcome-button {
+  padding: 12px 25px;
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #3213bd, #2575fc);
+  cursor: pointer;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s, box-shadow 0.3s ease;
+}
+
+.welcome-button.secondary {
+  background: linear-gradient(135deg, #2575fc, #3213bd);
+}
+
+.welcome-button:hover {
+  transform: translateY(-5px);
+  transform: scale(1.05);
+  background: linear-gradient(to left, #ffcf4a, #ff9f00);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+}
+
+.welcome-button:active {
+  transform: translateY(1px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
 }
 
 .text-colored {
@@ -63,13 +119,13 @@
 }
 
 .modal-content {
-  width: 400px;
-  max-height: 500px;
+  width: 40vw;
+  max-height: 60vh;
   overflow-y: auto;
 }
 
 .modal-content-2 {
-  width: 90%;
+  width: 100%;
   max-width: 500px;
 }
 
@@ -78,6 +134,7 @@
   font-size: 1.5rem;
   margin-bottom: 20px;
   text-align: center;
+  font-weight: bold;
 }
 
 .modal-body {
@@ -95,8 +152,7 @@
 }
 
 .modal-input,
-.modal-select,
-.filter-input {
+.modal-select {
   margin-top: 5px;
   padding: 10px;
   border: 1px solid #ccc;
@@ -207,10 +263,9 @@
 
 .teams-container {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  justify-content: center;
-  gap: 10px;
-  margin-bottom: 20px;
+  margin-bottom: 15px;
 }
 
 .team-info {
@@ -221,18 +276,30 @@
 }
 
 .team-logo {
-  width: 50px;
-  height: 50px;
-  object-fit: contain;
+  width: 60px;
+  height: 60px;
   border-radius: 50%;
+  object-fit: contain;
   background: #f0f0f0;
   padding: 5px;
 }
 
-.vs-text {
+.team-name {
+  font-size: 1rem;
   font-weight: bold;
+  color: #333;
+}
+
+.vs-text {
   font-size: 1.2rem;
+  font-weight: bold;
   color: #555;
+}
+
+.auction-details {
+  color: #555;
+  font-size: 0.9rem;
+  line-height: 1.4;
 }
 
 .fixture-date p{
@@ -286,20 +353,45 @@
 
 .buy-button,
 .recommendation-button {
-  background: #28a745;
-  color: #fff;
+  font-weight: bold;
   padding: 10px 20px;
   border: none;
   border-radius: 8px;
   cursor: pointer;
   font-size: 1rem;
-  margin-top: 10px;
-  transition: background 0.3s ease;
+  margin: 10px 5px;
+  transition: transform 0.3s ease, background 0.3s ease;
+  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.2);
 }
 
-.buy-button:hover,
-.recommendation-button:hover {
+.buy-button {
+  color: #fff;
+  background: #2c2b30;
+}
+
+.recommendation-button {
+  color: #333;
+  background: #ffffff;
+}
+
+.buy-button:hover{
   background: #218838;
+  transform: translateY(-5px);
+  transform: scale(1.05);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+}
+.recommendation-button:hover {
+  transform: translateY(-5px);
+  transform: scale(1.05);
+  background: linear-gradient(to left, #ffcf4a, #ff9f00);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+}
+
+.buttons-section {
+  display: flex;
+  justify-content: space-around;
+  gap: 20px;
+  width: 100%;
 }
 
 .no-fixtures {
@@ -335,7 +427,7 @@
   left: 10px; /* Justo al lado del contenedor cerrado */
   width: 30px;
   height: 30px;
-  border-radius: 50%;
+  border-radius: 10px;
   border: none;
   background: #898989;
   color: #fff;
@@ -480,17 +572,48 @@
 
 .filters-container {
   margin-top: 20px;
+  padding: 20px;
+  border-radius: 10px;
+  width: 80%;
+  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.2);
+  background: linear-gradient(0, #0d2247, #1e3c72);
 }
 
 .filters {
   display: flex;
-  margin-top: 10px;
+  flex-wrap: wrap;
+  gap: 20px;
+  justify-content: space-between;
 }
 
-.filter-input:focus {
+.filter-group {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.filter-label {
+  font-size: 1rem;
+  font-weight: bold;
+  color: #fff;
+}
+
+.filter-input,
+.filter-dropdown {
+  padding: 10px;
+  border-radius: 5px;
+  border: 1px solid #fff;
+  font-size: 1rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.filter-input:focus,
+.filter-dropdown:focus {
   border-color: #007bff;
   outline: none;
-  box-shadow: 0 0 4px rgba(0, 123, 255, 0.5);
+  box-shadow: 0 0 6px rgba(0, 123, 255, 0.5);
 }
 
 .recommendation-result {
@@ -518,7 +641,7 @@
 .fixture-bet-result {
   margin-top: 10px;
   padding: 10px;
-  background-color: #f0f8ff; /* Color de fondo suave */
+  background-color: #f0f8ff;
   border-radius: 5px;
 }
 
@@ -532,4 +655,133 @@
   font-size: 1rem;
   color: #333;
   margin-bottom: 10px;
+}
+
+.view-offers-page {
+  padding: 20px;
+}
+
+.page-title {
+  font-size: 2.5rem;
+  text-align: center;
+  margin-bottom: 30px;
+  color: #333;
+}
+
+.offers-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.auction-item {
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.auction-item:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+}
+
+.error-item {
+  background-color: #ffe5e5;
+  color: #d9534f;
+}
+
+.proposal-button {
+  background: linear-gradient(135deg, #007bff, #0056b3);
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: bold;
+  transition: background 0.3s;
+}
+
+.proposal-button:hover {
+  background: linear-gradient(135deg, #ffcf4a, #ff9f00);
+}
+
+.no-data-message,
+.no-permission-message,
+.login-required-message {
+  font-size: 1.2rem;
+  text-align: center;
+  color: #888;
+}
+
+.back-button {
+  margin-top: 20px;
+  background: #6c757d;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background 0.3s;
+}
+
+.back-button:hover {
+  background: #5a6268;
+}
+
+.offer-details {
+  background: #f9f9f9;
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.1);
+  font-size: 1rem;
+  color: #555;
+  display: flex;
+  flex-direction: column;
+}
+
+.section-title {
+  font-size: 1.5rem;
+  color: #007bff;
+  margin-bottom: 10px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-label {
+  font-size: 1rem;
+  font-weight: bold;
+  color: #333;
+}
+
+.form-input {
+  padding: 10px;
+  border: 1px solid #fff;
+  border-radius: 5px;
+  font-size: 1rem;
+  box-sizing: border-box;
+  width: 50%;
+}
+
+.form-input:focus {
+  border-color: #007bff;
+  outline: none;
+  box-shadow: 0 0 4px rgba(0, 123, 255, 0.5);
+}
+
+.offer-buttons {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 20px;
 }

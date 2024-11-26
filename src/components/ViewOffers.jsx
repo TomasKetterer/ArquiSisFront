@@ -26,12 +26,9 @@ const ViewOffers = () => {
   }, []);
 
   // Función para obtener las subastas de otros grupos
+  // eslint-disable-next-line
   const fetchOtherAuctions = async () => {
     try {
-      const token = await getAccessTokenSilently({
-        audience: process.env.REACT_APP_AUTH0_AUDIENCE,
-        scope: "openid profile email offline_access"
-      });
       const response = await axios.get(`${apiUrl}/auctions/others/${user.sub}`, {
         headers: {
           Authorization: `Bearer ${roles_token}`
@@ -45,10 +42,12 @@ const ViewOffers = () => {
   };
 
   // useEffect para cargar las subastas al montar el componente
+  // eslint-disable-next-line
   useEffect(() => {
     if (isAdmin && isAuthenticated) {
       fetchOtherAuctions();
     }
+  // eslint-disable-next-line
   }, [isAdmin, isAuthenticated]);
 
   // Función para obtener las fixtures con bonos reservados del administrador
@@ -108,11 +107,6 @@ const ViewOffers = () => {
     }
 
     try {
-      const token = await getAccessTokenSilently({
-        audience: process.env.REACT_APP_AUTH0_AUDIENCE,
-        scope: "openid profile email offline_access"
-      });
-
       // Enviar la propuesta al backend
       const response = await axios.post(`${apiUrl}/proposals/${user.sub}`, {
         auction_id: selectedAuction.auction_id,
@@ -160,6 +154,7 @@ const ViewOffers = () => {
     }
   };
   
+  // eslint-disable-next-line
   useEffect(() => {
     const fetchAuctionsAndFixtures = async () => {
       try {
@@ -192,6 +187,7 @@ const ViewOffers = () => {
     if (isAuthenticated) {
       fetchAuctionsAndFixtures();
     }
+  // eslint-disable-next-line
   }, [isAuthenticated]);
   
 
@@ -200,124 +196,137 @@ const ViewOffers = () => {
       {isAuthenticated ? (
         isAdmin ? (
           <div>
-            <h1>Ofertas de Otros Grupos</h1>
-            {otherAuctions.length > 0 ? (
-              <div className="offers-grid">
-              {otherAuctions.map((auction) => {
-                const { fixture } = auction; // Se extrae el fixture anidado en la subasta
+            <h1 className="page-title">Ofertas de Otros Grupos</h1>
+              {otherAuctions.length > 0 ? (
+                <div className="offers-grid">
+                  {otherAuctions.map((auction) => {
+                    const { fixture } = auction;
 
-                // Verificar si el fixture está disponible
-                if (!fixture) {
-                  return (
-                    <div key={auction.auction_id} className="auction-item">
-                      <p>Error: No se pudo cargar el fixture para esta subasta</p>
-                    </div>
-                  );
-                }
+                    if (!fixture) {
+                      return (
+                        <div key={auction.auction_id} className="auction-item error-item">
+                          <p>Error: No se pudo cargar el fixture para esta subasta</p>
+                        </div>
+                      );
+                    }
 
-                return (
-                  <div key={auction.auction_id} className="auction-item">
-                    {/* Información de los equipos */}
-                    <div className="teams-container">
-                      <div className="team-info">
-                        <img
-                          src={fixture.home_team_logo} // Usar fixture.home_team_logo
-                          alt={fixture.home_team_name} // Usar fixture.home_team_name
-                          className="team-logo"
-                        />
-                        <span className="text-colored">{fixture.home_team_name}</span>
+                    return (
+                      <div key={auction.auction_id} className="auction-item">
+                        <div className="teams-container">
+                          <div className="team-info">
+                            <img
+                              src={fixture.home_team_logo}
+                              alt={fixture.home_team_name}
+                              className="team-logo"
+                            />
+                            <span className="team-name">{fixture.home_team_name}</span>
+                          </div>
+                          <span className="vs-text">vs</span>
+                          <div className="team-info">
+                            <img
+                              src={fixture.away_team_logo}
+                              alt={fixture.away_team_name}
+                              className="team-logo"
+                            />
+                            <span className="team-name">{fixture.away_team_name}</span>
+                          </div>
+                        </div>
+                        <div className="auction-details">
+                          <p><strong>Grupo:</strong> {auction.group_id}</p>
+                          <p><strong>Partido:</strong> {fixture.league_name} - {fixture.league_round}</p>
+                          <p><strong>Resultado:</strong> {auction.result}</p>
+                          <p><strong>Cantidad:</strong> {auction.quantity}</p>
+                        </div>
+                        <button onClick={() => handleMakeProposalClick(auction)} className="buy-button">
+                          Hacer Propuesta
+                        </button>
                       </div>
-                      <span className="vs-text">vs</span>
-                      <div className="team-info">
-                        <img
-                          src={fixture.away_team_logo} // Usar fixture.away_team_logo
-                          alt={fixture.away_team_name} // Usar fixture.away_team_name
-                          className="team-logo"
-                        />
-                        <span className="text-colored">{fixture.away_team_name}</span>
-                      </div>
-                    </div>
-
-                    {/* Información de la subasta */}
-                    <p><strong>Grupo:</strong> {auction.group_id}</p>
-                    <p><strong>Partido:</strong> {fixture.league_name} - {fixture.league_round}</p>
-                    <p><strong>Resultado:</strong> {auction.result}</p>
-                    <p><strong>Cantidad:</strong> {auction.quantity}</p>
-                    <button onClick={() => handleMakeProposalClick(auction)}>Hacer Propuesta</button>
-                  </div>
-                );
-              })}
-            </div>
+                    );
+                  })}
+                </div>
             ) : (
-              <p>No hay ofertas disponibles de otros grupos.</p>
+              <p className="no-data-message">No hay ofertas disponibles de otros grupos.</p>
             )}
 
             {selectedAuction && (
               <div className="modal">
               <div className="modal-content">
-                <h2>Hacer Propuesta de Intercambio</h2>
-                <p>
-                  <strong>Oferta del Grupo {selectedAuction.group_id}:</strong>
-                </p>
-                <p>Partido: {selectedAuction.league_name} - {selectedAuction.round}</p>
-                <p>Resultado: {selectedAuction.result}</p>
-                <p>Cantidad: {selectedAuction.quantity}</p>
+                <h2 className="modal-title">Hacer Propuesta de Intercambio</h2>
             
-                <h3>Tus Bonos para Ofrecer:</h3>
-                <div className="form-group">
-                  <label htmlFor="select-fixture">Seleccionar Partido:</label>
-                  <select
-                    id="select-fixture"
-                    value={proposalFixtureId}
-                    onChange={(e) => setProposalFixtureId(e.target.value)}
-                  >
-                    <option value="">Selecciona un partido</option>
-                    {adminFixtures.map((fixture) => (
-                      <option
-                        key={`${fixture.fixture_id}-${fixture.result}`}
-                        value={`${fixture.fixture_id}-${fixture.result}`}
-                      >
-                        {fixture.league_name} - {fixture.league_round} ({fixture.bonos} bonos reservados) - {fixture.result}
-                      </option>
-                    ))}
-                  </select>
+                <div className="offer-details">
+                  <p>
+                    <strong>Oferta del Grupo:</strong> {selectedAuction.group_id}
+                  </p>
+                  <p>
+                    <strong>Partido:</strong> {selectedAuction.league_name} - {selectedAuction.round}
+                  </p>
+                  <p>
+                    <strong>Resultado:</strong> {selectedAuction.result}
+                  </p>
+                  <p>
+                    <strong>Cantidad:</strong> {selectedAuction.quantity}
+                  </p>
                 </div>
             
-                <div className="form-group">
-                  <label htmlFor="offer-quantity">Cantidad a Ofrecer:</label>
-                  <input
-                    id="offer-quantity"
-                    type="number"
-                    min="1"
-                    max={getFixtureById(proposalFixtureId)?.bonos || 0}
-                    value={proposalQuantity}
-                    onChange={(e) => setProposalQuantity(parseInt(e.target.value))}
-                  />
+                <h3 className="section-title">Tus Bonos para Ofrecer</h3>
+                <div className="offer-buttons">
+                  <div className="filter-group">
+                    <label htmlFor="select-fixture" className="form-label">Seleccionar Partido:</label>
+                    <select
+                      id="select-fixture"
+                      value={proposalFixtureId}
+                      onChange={(e) => setProposalFixtureId(e.target.value)}
+                      className="filter-input"
+                    >
+                      <option value="">Selecciona un partido</option>
+                      {adminFixtures.map((fixture) => (
+                        <option
+                          key={`${fixture.fixture_id}-${fixture.result}`}
+                          value={`${fixture.fixture_id}-${fixture.result}`}
+                        >
+                          {fixture.league_name} - {fixture.league_round} ({fixture.bonos} bonos reservados) - {fixture.result}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+              
+                  <div className="filter-group">
+                    <label htmlFor="offer-quantity" className="form-label">Cantidad a Ofrecer:</label>
+                    <input
+                      id="offer-quantity"
+                      type="number"
+                      min="1"
+                      max={getFixtureById(proposalFixtureId)?.bonos || 0}
+                      value={proposalQuantity}
+                      onChange={(e) => setProposalQuantity(parseInt(e.target.value))}
+                      className="form-input"
+                    />
+                  </div>
                 </div>
             
                 <div className="modal-footer">
-                  <button onClick={submitProposal} className="modal-button confirm-button">
+                  <button onClick={submitProposal} className="recommendation-button">
                     Enviar Propuesta
                   </button>
-                  <button onClick={() => setSelectedAuction(null)} className="modal-button cancel-button">
+                  <button onClick={() => setSelectedAuction(null)} className="recommendation-button">
                     Cancelar
                   </button>
                 </div>
               </div>
-            </div>
+            </div>            
             )}
-
           </div>
         ) : (
-          <p>No tienes permisos para ver esta página.</p>
+          <p className="no-permission-message">No tienes permisos para ver esta página.</p>
         )
       ) : (
-        <p>Debes iniciar sesión para ver esta página.</p>
+        <p className="login-required-message">Debes iniciar sesión para ver esta página.</p>
       )}
       <button onClick={handleBackClick} className="back-button">
-        Go Back to Home
+        Volver al Inicio
       </button>
     </div>
+
   );
 };
 
