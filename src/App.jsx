@@ -375,8 +375,8 @@ function App() {
     localStorage.removeItem('role');
 
     // Llamar a la función logout
-    // logout({ returnTo: window.location.origin });
-    logout({ returnTo: 'http://localhost:4000/' }); // debugging
+    logout({ returnTo: window.location.origin });
+    // logout({ returnTo: 'http://localhost:4000/' }); // debugging
 
   };
 
