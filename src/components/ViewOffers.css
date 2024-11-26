@@ -1,0 +1,21 @@
+/* Estilos generales para la página ViewOffers */
+.view-offers-page {
+    text-align: center;
+    background: linear-gradient(to right, #1e3c72, #2a5298);
+    min-height: 100vh;
+    padding: 20px;
+    color: white;
+  }
+  
+  .view-offers-page h1 {
+    margin-bottom: 30px;
+    font-size: 2.5rem;
+    color: #000000;
+  }
+  
+  .view-offers-page h2,
+  .view-offers-page h3 {
+    color: #000000;
+    margin-bottom: 20px;
+  }
+  

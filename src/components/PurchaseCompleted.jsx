@@ -42,7 +42,9 @@ const PurchaseCompleted = () => {
         }
         // get request_id from local storage
         const request_id = localStorage.getItem('request_id');
+        const isReserving = localStorage.getItem('isReserving');
         localStorage.removeItem('request_id');
+        localStorage.removeItem('isReserving');
         console.log('request_id:', request_id);
 
         const sendEmail = localStorage.getItem('sendEmailOnSuccess');
@@ -53,6 +55,7 @@ const PurchaseCompleted = () => {
           token_ws,
           request_id,
           sendEmail,
+          isReserving
         };
 
         const response = await axios.post(`${apiUrl}/transactions/commit`, data);

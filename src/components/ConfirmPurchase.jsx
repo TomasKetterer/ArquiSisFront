@@ -61,7 +61,7 @@ const ConfirmPurchase = () => {
         </div>
         <form action={url} method="POST" className="payment-form">
           <input type="hidden" name="token_ws" value={token} />
-          <button type="submit" className="pay-button">Pagar ${1000 * amount}</button>
+          <button type="submit" className="pay-button">Pagar ${amount}</button>
         </form>
       </div>
     </div>

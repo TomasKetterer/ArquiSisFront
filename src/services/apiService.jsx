@@ -9,17 +9,25 @@ import axios from 'axios';
 
 export const removeDuplicateFixtures = (fixtures) => {
     const uniqueFixtures = [];
-    const fixtureIds = new Set();
+    const fixtureMap = new Map();
 
     for (const fixture of fixtures) {
-        if (!fixtureIds.has(fixture.fixture_id)) {
-            fixtureIds.add(fixture.fixture_id);
-            uniqueFixtures.push(fixture);
+        // Si el fixture_id ya está en el mapa y el result es igual, omitirlo.
+        if (fixtureMap.has(fixture.fixture_id)) {
+            const existingResult = fixtureMap.get(fixture.fixture_id);
+            if (existingResult === fixture.result) {
+                continue;
+            }
         }
+
+        // Si el fixture_id no está en el mapa o tiene un result diferente, agregarlo.
+        fixtureMap.set(fixture.fixture_id, fixture.result);
+        uniqueFixtures.push(fixture);
     }
 
     return uniqueFixtures;
 };
+
 
 /**
  * Obtiene el balance de la wallet del usuario.
@@ -49,17 +57,22 @@ export const fetchUser = async (userId, getAccessTokenSilently) => {
  * @param {Function} getAccessTokenSilently - Función para obtener el token de acceso.
  * @returns {Promise<Array>} Lista de fixtures únicos.
  */
-export const fetchFixtures = async (getAccessTokenSilently) => {
+export const fetchFixtures = async (getAccessTokenSilently, showReservedFixtures) => {
     try {
-        const token = await getAccessTokenSilently();
+        const token = await getAccessTokenSilently({
+            audience: "https://api.nodecraft.me", 
+            scope: "openid profile email offline_access"
+          });
         const apiUrl = process.env.REACT_APP_API_URL;
-        const response = await axios.get(`${apiUrl}/fixtures`, {
+        const endpoint = showReservedFixtures ? '/fixtures/reserved' : '/fixtures';
+        const response = await axios.get(`${apiUrl}${endpoint}`, {
             headers: {
                 Authorization: `Bearer ${token}`
             }
         });
         const uniqueFixtures = removeDuplicateFixtures(response.data.data);
-        return uniqueFixtures;
+        const aviableFixtures = uniqueFixtures.filter(fixture => fixture.bonos > 0);
+        return aviableFixtures;
     } catch (error) {
         console.error('Error fetching fixtures:', error);
         throw error;
